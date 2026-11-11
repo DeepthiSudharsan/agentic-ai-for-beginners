@@ -11,5 +11,5 @@ def trace(event: str, **details: object) -> None:
 
 if __name__ == "__main__":
     trace("agent_started", lesson="best_practices")
-    trace("tool_called", tool="calculate_revenue_growth", from_period="Q1 2024", to_period="Q2 2024")
+    trace("tool_called", tool="compare_financials", metric="deposits", from_period="Q1 2024", to_period="Q4 2024")
     print("Trace written to agent_trace.jsonl. Langfuse can replace this local sink later.")

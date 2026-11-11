@@ -5,7 +5,7 @@ from pydantic_ai import Agent
 from pydantic_ai.mcp import MCPToolset
 
 from shared.cli import chat
-from shared.data import facts_as_text, revenue_growth
+from shared.data import facts_as_text, lookup_financial_metric, lookup_product_policy, operating_margin
 from shared.model import local_model
 
 
@@ -14,8 +14,8 @@ agent = Agent(
     local_model(),
     instructions=f"You are Finley, a finance QA assistant. Use only these facts:\n{facts_as_text()}",
 )
-finance_specialist = Agent(local_model(), instructions="Explain finance calculations simply.")
-research_specialist = Agent(local_model(), instructions="Summarize evidence and say when evidence is missing.")
+finance_specialist = Agent(local_model(), instructions=f"You are a bank financial analyst. Use these facts:\n{facts_as_text()}")
+research_specialist = Agent(local_model(), instructions=f"You are a customer-retention analyst. Use these facts:\n{facts_as_text()}")
 
 
 @agent.tool_plain
@@ -29,8 +29,18 @@ def ask_research_specialist(question: str) -> str:
 
 
 @agent.tool_plain
-def calculate_revenue_growth(from_period: str, to_period: str) -> str:
-    return revenue_growth(from_period, to_period)
+def lookup_metric(metric: str, period: str) -> str:
+    return lookup_financial_metric(metric, period)
+
+
+@agent.tool_plain
+def calculate_net_income_margin(period: str) -> str:
+    return operating_margin(period)
+
+
+@agent.tool_plain
+def lookup_product(product: str) -> str:
+    return lookup_product_policy(product)
 
 
 # NEW IN THIS LESSON: the same kind of tool is now supplied by an MCP server.

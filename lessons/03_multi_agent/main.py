@@ -1,7 +1,7 @@
 from pydantic_ai import Agent
 
 from shared.cli import chat
-from shared.data import facts_as_text, revenue_growth
+from shared.data import facts_as_text, lookup_customer, lookup_financial_metric, lookup_product_policy, operating_margin, retention_risk
 from shared.model import local_model
 
 
@@ -13,19 +13,28 @@ agent = Agent(
 
 
 @agent.tool_plain
-def calculate_revenue_growth(from_period: str, to_period: str) -> str:
-    """Compare revenue between two periods."""
-    return revenue_growth(from_period, to_period)
+def lookup_metric(metric: str, period: str) -> str:
+    return lookup_financial_metric(metric, period)
+
+
+@agent.tool_plain
+def calculate_net_income_margin(period: str) -> str:
+    return operating_margin(period)
+
+
+@agent.tool_plain
+def lookup_product(product: str) -> str:
+    return lookup_product_policy(product)
 
 
 # NEW IN THIS LESSON: two specialist agents.
 finance_specialist = Agent(
     local_model(),
-    instructions="You are a finance specialist. Explain calculations and finance terms simply.",
+    instructions=f"You are a bank financial analyst. Explain reported metrics and calculations simply. Use these facts:\n{facts_as_text()}",
 )
 research_specialist = Agent(
     local_model(),
-    instructions="You are a research specialist. Summarize evidence and say when evidence is missing.",
+    instructions=f"You are a customer-retention analyst. Explain observed engagement signals carefully. Use these facts:\n{facts_as_text()}",
 )
 
 
@@ -40,6 +49,19 @@ def ask_finance_specialist(question: str) -> str:
 def ask_research_specialist(question: str) -> str:
     """Use for summaries and evidence questions."""
     return research_specialist.run_sync(question).output
+
+
+# NEW IN THIS LESSON: customer tools support the retention specialist.
+@agent.tool_plain
+def lookup_customer_record(customer_id: str) -> str:
+    """Look up one sample customer by ID."""
+    return lookup_customer(customer_id)
+
+
+@agent.tool_plain
+def calculate_retention_risk(customer_id: str) -> str:
+    """Explain the illustrative retention-risk rule for one sample customer."""
+    return retention_risk(customer_id)
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ from pydantic_ai.mcp import MCPToolset
 from pydantic_ai_harness import Skills
 
 from shared.cli import chat
-from shared.data import facts_as_text, revenue_growth
+from shared.data import facts_as_text, lookup_customer, lookup_financial_metric, lookup_product_policy, operating_margin, retention_risk
 from shared.model import local_model
 
 
@@ -22,8 +22,8 @@ agent = Agent(
         Skills("skills"),
     ],
 )
-finance_specialist = Agent(local_model(), instructions="Explain finance calculations simply.")
-research_specialist = Agent(local_model(), instructions="Summarize evidence and say when evidence is missing.")
+finance_specialist = Agent(local_model(), instructions=f"You are a bank financial analyst. Use these facts:\n{facts_as_text()}")
+research_specialist = Agent(local_model(), instructions=f"You are a customer-retention analyst. Use these facts:\n{facts_as_text()}")
 
 
 @agent.tool_plain
@@ -37,8 +37,28 @@ def ask_research_specialist(question: str) -> str:
 
 
 @agent.tool_plain
-def calculate_revenue_growth(from_period: str, to_period: str) -> str:
-    return revenue_growth(from_period, to_period)
+def lookup_metric(metric: str, period: str) -> str:
+    return lookup_financial_metric(metric, period)
+
+
+@agent.tool_plain
+def calculate_net_income_margin(period: str) -> str:
+    return operating_margin(period)
+
+
+@agent.tool_plain
+def lookup_product(product: str) -> str:
+    return lookup_product_policy(product)
+
+
+@agent.tool_plain
+def lookup_customer_record(customer_id: str) -> str:
+    return lookup_customer(customer_id)
+
+
+@agent.tool_plain
+def calculate_retention_risk(customer_id: str) -> str:
+    return retention_risk(customer_id)
 
 
 server_file = Path(__file__).parents[1] / "04_mcp" / "server.py"

@@ -2,7 +2,7 @@
 
 A small, practical course for learning agentic AI with Python, [Pydantic AI](https://ai.pydantic.dev/), and an open-source Hugging Face model that runs locally on a CPU.
 
-The course uses one simple story throughout: **Finley**, a finance question-answering assistant. Finley answers questions about a tiny fictional company dataset included in this repository. This is learning data, not investment advice and not real financial data.
+The course uses one simple story throughout: **Finley**, an internal assistant for a fictional digital bank. Finley answers questions about quarterly performance, customer-retention signals, and product policies. This is learning data, not investment advice, credit advice, or real customer data.
 
 ## What you will learn
 
@@ -23,21 +23,24 @@ The model decides whether to call a specialist or tool from the task description
 
 ## Problem statement
 
-A customer-support analyst needs quick answers from a small collection of quarterly finance facts. The assistant should:
+A bank operations analyst needs quick, evidence-based answers from three small sources: quarterly financials, a customer-retention sample, and product policies. The assistant should:
 
 1. answer only from the supplied data;
-2. show the facts it used when possible;
-3. calculate simple changes such as revenue growth;
-4. route calculation questions to a finance specialist and general questions to a research specialist;
-5. refuse to invent a number when the data does not contain it.
+2. cite the source row or page when possible;
+3. calculate metrics such as quarter-over-quarter growth and net-income margin;
+4. investigate customer engagement without pretending a small rule is a trained churn model;
+5. answer product-fee questions without making eligibility or financial recommendations;
+6. refuse to invent a number when the data does not contain it.
 
 Try questions such as:
 
-- `What was Northstar's revenue in Q2 2024?`
-- `How much did revenue grow from Q1 to Q2 2024?`
-- `What was the operating margin in Q2?`
-- `Which source supports the Q2 revenue number?`
-- `What was the share price?` (the data does not contain this)
+- `What was Northstar's revenue in Q2 2024, and what source supports it?`
+- `How did deposits change from Q1 to Q4 2024?`
+- `What was Q3 net-income margin?`
+- `What signals suggest C1004 may need retention attention?`
+- `What are the annual fee and APR for the Northstar Rewards Card?`
+- `Which customers have a high illustrative retention-risk score?`
+- `What was Northstar's share price?` (the data does not contain this)
 
 ## Setup
 

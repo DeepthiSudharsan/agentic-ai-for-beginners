@@ -1,7 +1,7 @@
 from pydantic_ai import Agent
 
 from shared.cli import chat
-from shared.data import facts_as_text, revenue_growth
+from shared.data import facts_as_text, lookup_financial_metric, lookup_product_policy, operating_margin
 from shared.model import local_model
 
 
@@ -12,11 +12,23 @@ agent = Agent(
 )
 
 
-# NEW IN THIS LESSON: a typed Python function becomes an agent tool.
+# NEW IN THIS LESSON: typed Python functions become agent tools.
 @agent.tool_plain
-def calculate_revenue_growth(from_period: str, to_period: str) -> str:
-    """Compare revenue between two periods, such as Q1 2024 and Q2 2024."""
-    return revenue_growth(from_period, to_period)
+def lookup_metric(metric: str, period: str) -> str:
+    """Look up a reported bank metric for a quarter."""
+    return lookup_financial_metric(metric, period)
+
+
+@agent.tool_plain
+def calculate_net_income_margin(period: str) -> str:
+    """Calculate net income as a percentage of revenue for a quarter."""
+    return operating_margin(period)
+
+
+@agent.tool_plain
+def lookup_product(product: str) -> str:
+    """Look up fees and APR for one bank product."""
+    return lookup_product_policy(product)
 
 
 if __name__ == "__main__":
