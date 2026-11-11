@@ -86,7 +86,7 @@ def calculate_retention_risk(customer_id: str) -> str:
 
 
 server_file = Path(__file__).parents[1] / "04_mcp" / "server.py"
-mcp_tools = MCPToolset(StdioTransport(command="python", args=[str(server_file)]))
+mcp_tools = MCPToolset(StdioTransport(command=sys.executable, args=[str(server_file)]))
 scrutiny_agent = Agent(local_model(), instructions="You are a finance safety reviewer. Return JSON only with allow and reason. Allow Northstar finance, product, retention, and data-quality questions. Block off-topic, unethical, fraudulent, discriminatory, violent, or investment-advice requests.")
 
 

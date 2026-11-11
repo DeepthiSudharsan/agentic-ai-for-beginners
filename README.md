@@ -62,6 +62,8 @@ source .venv/bin/activate       # macOS/Linux
 uv pip install -r requirements.txt
 ```
 
+If you installed an earlier version of the course dependencies, run the same command again after pulling updates so `mcp` is downgraded to the compatible 1.x release.
+
 The first model run downloads the small `Qwen/Qwen2.5-0.5B-Instruct` model from Hugging Face. No Hugging Face access token, API key, or GPU is required. The download is cached locally; CPU generation can take a little while.
 
 Hugging Face stores the downloaded model in its local cache (usually `~/.cache/huggingface/hub`). Later runs reuse those files and do not download the model again. Set `HF_HOME` if you want the cache in another location. An `HF_TOKEN` is optional; it only helps with Hugging Face rate limits and is not required for this public model.

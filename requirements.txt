@@ -7,7 +7,8 @@ openpyxl>=3.1
 python-docx>=1.1
 
 # Lesson 04 (MCP)
-mcp>=1.0
+# The course uses the MCP v1 FastMCP API. MCP v2 renamed this API.
+mcp>=1.0,<2.0
 fastmcp>=2.0
 
 # Native Pydantic AI capabilities: Skills and Memory

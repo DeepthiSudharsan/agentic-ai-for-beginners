@@ -50,7 +50,7 @@ def lookup_product(product: str) -> str:
 
 # NEW IN THIS LESSON: the same kind of tool is now supplied by an MCP server.
 server_file = Path(__file__).with_name("server.py")
-mcp_tools = MCPToolset(StdioTransport(command="python", args=[str(server_file)]))
+mcp_tools = MCPToolset(StdioTransport(command=sys.executable, args=[str(server_file)]))
 
 
 if __name__ == "__main__":
