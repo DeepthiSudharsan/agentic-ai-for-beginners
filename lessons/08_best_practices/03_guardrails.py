@@ -15,7 +15,8 @@ from pydantic_ai.capabilities import LocalWorkspace, MCP, Thinking
 from pydantic_ai_harness import Memory, Skills
 from pydantic_ai_harness.memory import FileStore
 
-from shared.data import facts_as_text, lookup_customer, lookup_financial_metric, lookup_product_policy, operating_margin, retention_risk
+from shared.cli import show_activity
+from shared.data import facts_as_text, high_retention_risk_customers, lookup_customer, lookup_financial_metric, lookup_product_policy, operating_margin, retention_risk
 from shared.model import local_model
 
 try:
@@ -44,14 +45,16 @@ research_specialist = Agent(local_model(), instructions=f"You are a customer-ret
 
 @agent.tool_plain
 @observe(name="ask_finance_specialist", as_type="tool")
-def ask_finance_specialist(question: str) -> str:
-    return finance_specialist.run_sync(question).output
+async def ask_finance_specialist(question: str) -> str:
+    result = await finance_specialist.run(question)
+    return result.output
 
 
 @agent.tool_plain
 @observe(name="ask_research_specialist", as_type="tool")
-def ask_research_specialist(question: str) -> str:
-    return research_specialist.run_sync(question).output
+async def ask_research_specialist(question: str) -> str:
+    result = await research_specialist.run(question)
+    return result.output
 
 
 @agent.tool_plain
@@ -84,6 +87,13 @@ def calculate_retention_risk(customer_id: str) -> str:
     return retention_risk(customer_id)
 
 
+@agent.tool_plain
+@observe(name="list_high_retention_risk_customers", as_type="tool")
+def list_high_retention_risk_customers(customer_id: str = "") -> str:
+    """List all sample customers with a high illustrative retention-risk score."""
+    return high_retention_risk_customers(customer_id)
+
+
 # NEW IN THIS LESSON: PII is redacted before any LLM scrutiny or agent call.
 @observe(name="pii_redaction", as_type="guardrail")
 def redact_pii(question: str) -> tuple[str, list[str]]:
@@ -107,7 +117,7 @@ scrutiny_agent = Agent(local_model(), instructions=(
 
 @observe(name="request_scrutiny", as_type="guardrail")
 def scrutinize(question: str) -> tuple[bool, str]:
-    raw = scrutiny_agent.run_sync(question).output
+    raw = scrutiny_agent.run_sync(question, event_stream_handler=show_activity).output
     try:
         decision = json.loads(raw)
         return bool(decision.get("allow")), str(decision.get("reason", "No reason supplied."))
@@ -122,7 +132,7 @@ def run_guarded_agent(question: str, message_history: list):
     if not allowed:
         return None, f"Request blocked by the finance safety reviewer: {reason}"
     with propagate_attributes(session_id="beginner-finance-cli", user_id="course-student", tags=["agentic-ai-course", "finance-qa"], metadata={"lesson": "08.3", "pii_entities_redacted": entities}):
-        return agent.run_sync(sanitized, message_history=message_history), None
+        return agent.run_sync(sanitized, message_history=message_history, event_stream_handler=show_activity), None
 
 
 def chat() -> None:

@@ -13,7 +13,8 @@ from pydantic_ai.capabilities import LocalWorkspace, MCP, Thinking
 from pydantic_ai_harness import Memory, Skills
 from pydantic_ai_harness.memory import FileStore
 
-from shared.data import facts_as_text, lookup_customer, lookup_financial_metric, lookup_product_policy, operating_margin, retention_risk
+from shared.cli import show_activity
+from shared.data import facts_as_text, high_retention_risk_customers, lookup_customer, lookup_financial_metric, lookup_product_policy, operating_margin, retention_risk
 from shared.model import local_model
 
 try:
@@ -54,14 +55,16 @@ research_specialist = Agent(local_model(), instructions=f"You are a customer-ret
 
 @agent.tool_plain
 @observe(name="ask_finance_specialist", as_type="tool")
-def ask_finance_specialist(question: str) -> str:
-    return finance_specialist.run_sync(question).output
+async def ask_finance_specialist(question: str) -> str:
+    result = await finance_specialist.run(question)
+    return result.output
 
 
 @agent.tool_plain
 @observe(name="ask_research_specialist", as_type="tool")
-def ask_research_specialist(question: str) -> str:
-    return research_specialist.run_sync(question).output
+async def ask_research_specialist(question: str) -> str:
+    result = await research_specialist.run(question)
+    return result.output
 
 
 @agent.tool_plain
@@ -94,11 +97,18 @@ def calculate_retention_risk(customer_id: str) -> str:
     return retention_risk(customer_id)
 
 
+@agent.tool_plain
+@observe(name="list_high_retention_risk_customers", as_type="tool")
+def list_high_retention_risk_customers(customer_id: str = "") -> str:
+    """List all sample customers with a high illustrative retention-risk score."""
+    return high_retention_risk_customers(customer_id)
+
+
 # NEW IN THIS LESSON: an agent observation is the parent of model/tool work.
 @observe(name="finley_agent", as_type="agent")
 def run_agent(question: str, message_history: list):
     with propagate_attributes(session_id="beginner-finance-cli", user_id="course-student", tags=["agentic-ai-course", "finance-qa"], metadata={"lesson": "08.1", "model": "local-huggingface"}):
-        return agent.run_sync(question, message_history=message_history)
+        return agent.run_sync(question, message_history=message_history, event_stream_handler=show_activity)
 
 
 def chat() -> None:

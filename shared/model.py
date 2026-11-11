@@ -21,7 +21,7 @@ os.environ.setdefault("TORCH_CPP_LOG_LEVEL", "ERROR")
 
 import torch
 from pydantic_ai import ModelMessage, ModelResponse, TextPart, ToolCallPart
-from pydantic_ai.models.function import AgentInfo, FunctionModel
+from pydantic_ai.models.function import AgentInfo, DeltaToolCall, FunctionModel
 
 MODEL_NAME = os.getenv("AGENT_MODEL", "Qwen/Qwen2.5-0.5B-Instruct")
 
@@ -56,9 +56,13 @@ def _message_text(messages: list[ModelMessage]) -> str:
     parts = []
     for message in messages:
         for part in message.parts:
+            part_kind = getattr(part, "part_kind", "")
+            if part_kind == "system-prompt":
+                continue
             content = getattr(part, "content", None)
             if content:
-                parts.append(str(content))
+                prefix = "TOOL RESULT: " if part_kind == "tool-return" else ""
+                parts.append(prefix + str(content))
             if hasattr(part, "tool_name"):
                 parts.append(f"Tool call: {part.tool_name} {getattr(part, 'args', '')}")
     return "\n".join(parts)
@@ -81,29 +85,79 @@ def _respond(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         for tool in info.function_tools
     ]
     if tools:
+        tool_names = {tool.name for tool in info.function_tools}
         tool_instruction = (
             "If a listed function is useful, output ONLY one JSON object in this exact shape: "
             '{"tool": "function_name", "args": {"argument": "value"}}. '
             "Otherwise answer in one or two short sentences."
         )
+        routing_hints = []
+        if "list_high_retention_risk_customers" in tool_names:
+            routing_hints.append("questions asking which/all customers have high retention risk -> list_high_retention_risk_customers")
+        if "calculate_retention_risk" in tool_names:
+            routing_hints.append("questions asking about one customer's risk -> calculate_retention_risk")
+        if "lookup_customer_record" in tool_names:
+            routing_hints.append("questions asking for one customer's record -> lookup_customer_record")
+        if "lookup_product" in tool_names:
+            routing_hints.append("annual fee, APR, or product policy -> lookup_product")
+        if "lookup_metric" in tool_names:
+            routing_hints.append("a named quarterly metric -> lookup_metric")
+        if "calculate_net_income_margin" in tool_names:
+            routing_hints.append("net-income margin -> calculate_net_income_margin")
+        routing = "\nRouting hints:\n- " + "\n- ".join(routing_hints) if routing_hints else ""
     else:
         tool_instruction = "There are no functions available. Answer the user directly in one or two short sentences. Do not output JSON, tool names, or analysis."
+        routing = ""
     prompt = (
         "You are a helpful finance course assistant. Answer briefly and only use facts supplied in the conversation.\n"
         f"{tool_instruction}\n"
-        f"Available functions:\n{json.dumps(tools)}\n\nConversation:\n{_message_text(messages)}\nAnswer:"
+        "After a function returns, answer the user's original question directly; never repeat tool calls or JSON.\n"
+        f"Available functions:\n{json.dumps(tools)}{routing}\n\nConversation:\n{_message_text(messages)}\nAnswer:"
     )
     result = _pipeline()(prompt, max_new_tokens=180, do_sample=False, return_full_text=False)[0]["generated_text"].strip()
     call = _extract_json(result)
     tool_names = {tool.name for tool in info.function_tools}
+    # Some very small models emit only the selected function name. Treat that
+    # as a valid no-argument tool request instead of showing it to the learner.
+    bare_tool_name = result.strip().strip("` .")
+    if bare_tool_name in tool_names:
+        return ModelResponse(parts=[ToolCallPart(tool_name=bare_tool_name, args={})])
     if call and call.get("tool") in tool_names:
         return ModelResponse(parts=[ToolCallPart(tool_name=call["tool"], args=call.get("args", {}))])
+    tool_results = [
+        str(getattr(part, "content", ""))
+        for message in messages
+        for part in message.parts
+        if getattr(part, "part_kind", "") == "tool-return" and getattr(part, "content", "")
+    ]
+    if tool_results and re.search(r"no results|need more parameters|additional information|not enough", result, re.IGNORECASE):
+        result = tool_results[-1]
     # Tiny instruction models sometimes echo a tool-shaped object even when no
     # tool is available. Keep that protocol noise out of the student-facing CLI.
-    result = re.sub(r'\s*\{"tool"\s*:\s*"[^"]+"\s*,\s*"args"\s*:\s*\{.*?\}\}\s*', " ", result)
-    result = re.sub(r'\s*\{"tool"\s*:\s*"none"\s*\}\s*', " ", result, flags=re.IGNORECASE)
+    # The small model can append a second, malformed protocol attempt after a
+    # useful sentence. Keep the natural-language answer and hide that protocol.
+    for marker in ("Tool call:", '{"tool"', "```json"):
+        if marker in result:
+            result = result.split(marker, 1)[0]
+    result = re.sub(r'\s*\{"tool".*', " ", result, flags=re.DOTALL)
     result = re.sub(r"\s+", " ", result).strip()
     return ModelResponse(parts=[TextPart(result)])
+
+
+async def _stream_respond(messages: list[ModelMessage], info: AgentInfo):
+    """Adapt the same local response for Pydantic AI's streamed event API."""
+    response = _respond(messages, info)
+    for index, part in enumerate(response.parts):
+        if isinstance(part, TextPart):
+            yield part.content
+        elif isinstance(part, ToolCallPart):
+            yield {
+                index: DeltaToolCall(
+                    name=part.tool_name,
+                    json_args=part.args_as_json_str(),
+                    tool_call_id=part.tool_call_id,
+                )
+            }
 
 
 # Best-practice tracing opts into a real Langfuse generation observation.
@@ -119,4 +173,4 @@ if os.getenv("LANGFUSE_TRACE_GENERATION") == "1":
 
 def local_model() -> FunctionModel:
     """Return the shared Pydantic AI model used in every lesson."""
-    return FunctionModel(_respond, model_name=MODEL_NAME)
+    return FunctionModel(_respond, stream_function=_stream_respond, model_name=MODEL_NAME)

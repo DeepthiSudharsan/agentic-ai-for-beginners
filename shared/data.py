@@ -236,6 +236,12 @@ def retention_risk(customer_id: str) -> str:
     row = next((item for item in _customers_from_csv() if item["customer_id"].lower() == customer_id.lower()), None)
     if row is None:
         return f"No customer record exists for {customer_id}."
+    score, reasons = _retention_score(row)
+    label = "high" if score >= 4 else "medium" if score >= 2 else "low"
+    return f"Illustrative retention risk for {customer_id}: {label} ({score}/6). Reasons: {', '.join(reasons) or 'no strong risk signal in this sample'}. Source: {_customer_source(customer_id)}. This is a teaching rule, not a trained prediction model."
+
+
+def _retention_score(row: dict) -> tuple[int, list[str]]:
     score = 0
     reasons = []
     if row["days_since_login"] > 30:
@@ -250,5 +256,14 @@ def retention_risk(customer_id: str) -> str:
     if row["missed_payments_12m"] > 0:
         score += 2
         reasons.append("missed payment history")
-    label = "high" if score >= 4 else "medium" if score >= 2 else "low"
-    return f"Illustrative retention risk for {customer_id}: {label} ({score}/6). Reasons: {', '.join(reasons) or 'no strong risk signal in this sample'}. Source: {_customer_source(customer_id)}. This is a teaching rule, not a trained prediction model."
+    return score, reasons
+
+
+def high_retention_risk_customers(_unused_customer_id: str = "") -> str:
+    """List every sample customer whose transparent teaching score is high."""
+    high = []
+    for row in _customers_from_csv():
+        score, reasons = _retention_score(row)
+        if score >= 4:
+            high.append(f"{row['customer_id']} ({score}/6: {', '.join(reasons)})")
+    return "High illustrative retention-risk customers: " + "; ".join(high) + ". Source: data/sources/customers.csv. This is a teaching rule, not a trained prediction model."

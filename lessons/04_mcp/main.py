@@ -9,7 +9,7 @@ from pydantic_ai import Agent
 from pydantic_ai.capabilities import MCP
 
 from shared.cli import chat
-from shared.data import facts_as_text, lookup_financial_metric, lookup_product_policy, operating_margin
+from shared.data import facts_as_text, high_retention_risk_customers, lookup_financial_metric, lookup_product_policy, operating_margin
 from shared.model import local_model
 
 
@@ -25,13 +25,21 @@ research_specialist = Agent(local_model(), instructions=f"You are a customer-ret
 
 
 @agent.tool_plain
-def ask_finance_specialist(question: str) -> str:
-    return finance_specialist.run_sync(question).output
+async def ask_finance_specialist(question: str) -> str:
+    result = await finance_specialist.run(question)
+    return result.output
 
 
 @agent.tool_plain
-def ask_research_specialist(question: str) -> str:
-    return research_specialist.run_sync(question).output
+async def ask_research_specialist(question: str) -> str:
+    result = await research_specialist.run(question)
+    return result.output
+
+
+@agent.tool_plain
+def list_high_retention_risk_customers(customer_id: str = "") -> str:
+    """List all sample customers with a high illustrative retention-risk score."""
+    return high_retention_risk_customers(customer_id)
 
 
 @agent.tool_plain
