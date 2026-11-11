@@ -1,15 +1,12 @@
 # Core lessons
-pydantic-ai>=1.0
+pydantic-ai[mcp]>=2.67,<3.0
+# Full FastMCP is needed only by the local teaching server; Pydantic AI owns the client connection.
+fastmcp>=3.3,<5.0
 transformers>=4.45
 torch>=2.2
 pypdf>=5.0
 openpyxl>=3.1
 python-docx>=1.1
-
-# Lesson 04 (MCP)
-# The course uses the MCP v1 FastMCP API. MCP v2 renamed this API.
-mcp>=1.0,<2.0
-fastmcp>=2.0
 
 # Native Pydantic AI capabilities: Skills and Memory
 pydantic-ai-harness[skills]>=0.1

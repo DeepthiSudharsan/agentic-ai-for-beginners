@@ -10,10 +10,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 os.environ["LANGFUSE_TRACE_GENERATION"] = "1"
 os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
 
-from fastmcp.client.transports import StdioTransport
 from pydantic_ai import Agent
-from pydantic_ai.capabilities import LocalWorkspace, Thinking
-from pydantic_ai.mcp import MCPToolset
+from pydantic_ai.capabilities import LocalWorkspace, MCP, Thinking
 from pydantic_ai_harness import Memory, Skills
 from pydantic_ai_harness.memory import FileStore
 
@@ -38,7 +36,8 @@ except ImportError:
 
 
 # COPIED FROM LESSON 08.3: the complete guarded assistant remains.
-agent = Agent(local_model(), instructions=f"You are Finley, a finance QA assistant. Answer only from these facts. If data is missing, say so.\n\n{facts_as_text()}", capabilities=[LocalWorkspace("."), Skills("skills"), Memory(FileStore(".agent-memory")), Thinking(effort="low")])
+server_file = Path(__file__).parents[1] / "04_mcp" / "server.py"
+agent = Agent(local_model(), instructions=f"You are Finley, a finance QA assistant. Answer only from these facts. If data is missing, say so.\n\n{facts_as_text()}", capabilities=[LocalWorkspace("."), Skills("skills"), MCP(local=server_file, id="northstar-finance"), Memory(FileStore(".agent-memory")), Thinking(effort="low")])
 finance_specialist = Agent(local_model(), instructions=f"You are a bank financial analyst. Use these facts:\n{facts_as_text()}")
 research_specialist = Agent(local_model(), instructions=f"You are a customer-retention analyst. Use these facts:\n{facts_as_text()}")
 
@@ -85,8 +84,6 @@ def calculate_retention_risk(customer_id: str) -> str:
     return retention_risk(customer_id)
 
 
-server_file = Path(__file__).parents[1] / "04_mcp" / "server.py"
-mcp_tools = MCPToolset(StdioTransport(command=sys.executable, args=[str(server_file)]))
 scrutiny_agent = Agent(local_model(), instructions="You are a finance safety reviewer. Return JSON only with allow and reason. Allow Northstar finance, product, retention, and data-quality questions. Block off-topic, unethical, fraudulent, discriminatory, violent, or investment-advice requests.")
 
 
@@ -114,7 +111,7 @@ def run_guarded_agent(question: str, message_history: list):
     if not allowed:
         return None, f"Request blocked by the finance safety reviewer: {reason}"
     with propagate_attributes(session_id="evaluation-run", tags=["agentic-ai-course", "evaluation"], metadata={"lesson": "08.4"}):
-        return agent.run_sync(sanitized, message_history=message_history, toolsets=[mcp_tools]), None
+        return agent.run_sync(sanitized, message_history=message_history), None
 
 
 def tool_names(result) -> list[str]:

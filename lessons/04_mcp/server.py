@@ -5,7 +5,7 @@ from pathlib import Path
 os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 from shared.data import compare_financial_metric
 

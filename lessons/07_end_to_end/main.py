@@ -5,10 +5,8 @@ from pathlib import Path
 os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from fastmcp.client.transports import StdioTransport
 from pydantic_ai import Agent
-from pydantic_ai.capabilities import LocalWorkspace, Thinking
-from pydantic_ai.mcp import MCPToolset
+from pydantic_ai.capabilities import LocalWorkspace, MCP, Thinking
 from pydantic_ai_harness import Memory, Skills
 from pydantic_ai_harness.memory import FileStore
 
@@ -17,7 +15,8 @@ from shared.data import facts_as_text, lookup_customer, lookup_financial_metric,
 from shared.model import local_model
 
 
-# COPIED FROM LESSON 06: the final agent uses real Pydantic AI capabilities.
+# COPIED FROM LESSON 06: the final agent uses native Pydantic AI capabilities.
+server_file = Path(__file__).parents[1] / "04_mcp" / "server.py"
 agent = Agent(
     local_model(),
     instructions=(
@@ -28,6 +27,7 @@ agent = Agent(
     capabilities=[
         LocalWorkspace("."),
         Skills("skills"),
+        MCP(local=server_file, id="northstar-finance"),
         Memory(FileStore(".agent-memory")),
         Thinking(effort="low"),
     ],
@@ -72,9 +72,5 @@ def calculate_retention_risk(customer_id: str) -> str:
     return retention_risk(customer_id)
 
 
-server_file = Path(__file__).parents[1] / "04_mcp" / "server.py"
-mcp_tools = MCPToolset(StdioTransport(command=sys.executable, args=[str(server_file)]))
-
-
 if __name__ == "__main__":
-    chat(agent, toolsets=[mcp_tools])
+    chat(agent)

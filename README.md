@@ -62,7 +62,14 @@ source .venv/bin/activate       # macOS/Linux
 uv pip install -r requirements.txt
 ```
 
-If you installed an earlier version of the course dependencies, run the same command again after pulling updates so `mcp` is downgraded to the compatible 1.x release.
+If you installed an earlier version of the course dependencies, recreate the environment so old MCP/FastMCP files cannot remain mixed with the new Pydantic AI MCP client:
+
+```bash
+deactivate 2>/dev/null || true
+uv venv --clear
+source .venv/bin/activate
+uv pip install -r requirements.txt
+```
 
 The first model run downloads the small `Qwen/Qwen2.5-0.5B-Instruct` model from Hugging Face. No Hugging Face access token, API key, or GPU is required. The download is cached locally; CPU generation can take a little while.
 
@@ -87,7 +94,7 @@ data/sources/           inspectable PDF, XLSX, DOCX, CSV, and Markdown sources
 lessons/01_single_agent one agent
 lessons/02_tools        tools and tool arguments
 lessons/03_multi_agent  model-selected subagents
-lessons/04_mcp          local MCP server and client
+lessons/04_mcp          local MCP server and Pydantic AI MCP capability
 skills/                 Agent Skills stored as SKILL.md files
 lessons/05_skills       discover and load skills on demand
 lessons/06_capabilities native Pydantic AI capabilities

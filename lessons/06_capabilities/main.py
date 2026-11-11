@@ -5,10 +5,8 @@ from pathlib import Path
 os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from fastmcp.client.transports import StdioTransport
 from pydantic_ai import Agent
-from pydantic_ai.capabilities import LocalWorkspace, Thinking
-from pydantic_ai.mcp import MCPToolset
+from pydantic_ai.capabilities import LocalWorkspace, MCP, Thinking
 from pydantic_ai_harness import Memory, Skills
 from pydantic_ai_harness.memory import FileStore
 
@@ -19,6 +17,8 @@ from shared.model import local_model
 
 # COPIED FROM LESSON 05: skills are discovered from skills/*/SKILL.md.
 capabilities = [LocalWorkspace("."), Skills("skills")]
+server_file = Path(__file__).parents[1] / "04_mcp" / "server.py"
+capabilities.append(MCP(local=server_file, id="northstar-finance"))
 
 # NEW IN THIS LESSON: native Pydantic AI capabilities.
 capabilities += [
@@ -70,9 +70,5 @@ def calculate_retention_risk(customer_id: str) -> str:
     return retention_risk(customer_id)
 
 
-server_file = Path(__file__).parents[1] / "04_mcp" / "server.py"
-mcp_tools = MCPToolset(StdioTransport(command=sys.executable, args=[str(server_file)]))
-
-
 if __name__ == "__main__":
-    chat(agent, toolsets=[mcp_tools])
+    chat(agent)

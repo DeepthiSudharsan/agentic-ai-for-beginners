@@ -9,10 +9,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 os.environ["LANGFUSE_TRACE_GENERATION"] = "1"
 os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
 
-from fastmcp.client.transports import StdioTransport
 from pydantic_ai import Agent
-from pydantic_ai.capabilities import LocalWorkspace, Thinking
-from pydantic_ai.mcp import MCPToolset
+from pydantic_ai.capabilities import LocalWorkspace, MCP, Thinking
 from pydantic_ai_harness import Memory, Skills
 from pydantic_ai_harness.memory import FileStore
 
@@ -31,7 +29,8 @@ except ImportError:
 
 
 # COPIED FROM LESSON 07 and LESSON 08.1: the full traced assistant remains.
-agent = Agent(local_model(), instructions=f"You are Finley, a finance QA assistant. Answer only from these facts. If data is missing, say so.\n\n{facts_as_text()}", capabilities=[LocalWorkspace("."), Skills("skills"), Memory(FileStore(".agent-memory")), Thinking(effort="low")])
+server_file = Path(__file__).parents[1] / "04_mcp" / "server.py"
+agent = Agent(local_model(), instructions=f"You are Finley, a finance QA assistant. Answer only from these facts. If data is missing, say so.\n\n{facts_as_text()}", capabilities=[LocalWorkspace("."), Skills("skills"), MCP(local=server_file, id="northstar-finance"), Memory(FileStore(".agent-memory")), Thinking(effort="low")])
 finance_specialist = Agent(local_model(), instructions=f"You are a bank financial analyst. Use these facts:\n{facts_as_text()}")
 research_specialist = Agent(local_model(), instructions=f"You are a customer-retention analyst. Use these facts:\n{facts_as_text()}")
 
@@ -84,14 +83,10 @@ def calculate_retention_risk(customer_id: str) -> str:
     return retention_risk(customer_id)
 
 
-server_file = Path(__file__).parents[1] / "04_mcp" / "server.py"
-mcp_tools = MCPToolset(StdioTransport(command=sys.executable, args=[str(server_file)]))
-
-
 @observe(name="finley_agent", as_type="agent")
 def run_agent(question: str, message_history: list):
     with propagate_attributes(session_id="beginner-finance-cli", user_id="course-student", tags=["agentic-ai-course", "finance-qa"], metadata={"lesson": "08.2", "cache_version": "finance-v1"}):
-        return agent.run_sync(question, message_history=message_history, toolsets=[mcp_tools])
+        return agent.run_sync(question, message_history=message_history)
 
 
 def chat() -> None:
