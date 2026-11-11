@@ -1,0 +1,9 @@
+{
+  "company": "Northstar Goods (fictional)",
+  "facts": [
+    {"period": "Q1 2024", "revenue_million_usd": 10.0, "operating_income_million_usd": 1.8, "customers": 1200, "source": "Northstar quarterly brief, page 1"},
+    {"period": "Q2 2024", "revenue_million_usd": 12.5, "operating_income_million_usd": 2.5, "customers": 1400, "source": "Northstar quarterly brief, page 2"},
+    {"period": "Q3 2024", "revenue_million_usd": 13.0, "operating_income_million_usd": 2.6, "customers": 1500, "source": "Northstar quarterly brief, page 3"},
+    {"period": "Q4 2024", "revenue_million_usd": 14.2, "operating_income_million_usd": 3.0, "customers": 1620, "source": "Northstar quarterly brief, page 4"}
+  ]
+}
