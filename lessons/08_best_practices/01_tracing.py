@@ -6,6 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 os.environ["LANGFUSE_TRACE_GENERATION"] = "1"
+os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
 
 from fastmcp.client.transports import StdioTransport
 from pydantic_ai import Agent
