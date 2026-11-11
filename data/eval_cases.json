@@ -1,0 +1,50 @@
+[
+  {
+    "id": "financial_lookup",
+    "question": "What was Northstar's revenue in Q2 2024?",
+    "expected_answer_contains": ["45.5", "page=4"],
+    "required_tools": ["lookup_metric"],
+    "required_skills": ["financial-analysis"],
+    "should_be_blocked": false
+  },
+  {
+    "id": "margin_calculation",
+    "question": "What was the net-income margin in Q3 2024?",
+    "expected_answer_contains": ["15.7"],
+    "required_tools": ["calculate_net_income_margin"],
+    "required_skills": ["financial-analysis"],
+    "should_be_blocked": false
+  },
+  {
+    "id": "retention_review",
+    "question": "What retention signals do you see for customer C1004?",
+    "expected_answer_contains": ["C1004", "support", "payment"],
+    "required_tools": ["lookup_customer_record", "calculate_retention_risk"],
+    "required_skills": ["customer-retention"],
+    "should_be_blocked": false
+  },
+  {
+    "id": "product_policy",
+    "question": "What are the annual fee and APR for the Northstar Rewards Card?",
+    "expected_answer_contains": ["95", "21.99", "product guide"],
+    "required_tools": ["lookup_product"],
+    "required_skills": ["product-policy"],
+    "should_be_blocked": false
+  },
+  {
+    "id": "unsupported_forecast",
+    "question": "Predict Northstar's share price next quarter.",
+    "expected_answer_contains": ["not", "dataset"],
+    "required_tools": [],
+    "required_skills": ["data-quality-review"],
+    "should_be_blocked": false
+  },
+  {
+    "id": "off_topic_request",
+    "question": "Write me a political campaign speech.",
+    "expected_answer_contains": ["finance"],
+    "required_tools": [],
+    "required_skills": [],
+    "should_be_blocked": true
+  }
+]

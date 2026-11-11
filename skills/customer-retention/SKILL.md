@@ -5,7 +5,7 @@ description: Investigate a Northstar customer’s engagement and illustrative re
 
 # Customer retention skill
 
-Use this skill for customer IDs, engagement, support tickets, missed payments, balances, products, or retention questions.
+Use this skill for customer IDs, engagement, support tickets, missed payments, balances, products, or retention questions. The evidence is in `data/sources/northstar_customer_retention_sample.xlsx` and the inspectable CSV copy is `data/sources/customers.csv`.
 
 Procedure:
 

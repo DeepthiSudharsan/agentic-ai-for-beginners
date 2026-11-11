@@ -79,6 +79,7 @@ Type a question, press Enter, and type `exit` to stop. Start with lesson 01 and 
 ```text
 shared/                 shared model, data loading, CLI, and finance functions
 data/                   tiny fictional finance dataset
+data/sources/           inspectable PDF, XLSX, DOCX, CSV, and Markdown sources
 lessons/01_single_agent one agent
 lessons/02_tools        tools and tool arguments
 lessons/03_multi_agent  model-selected subagents
@@ -92,7 +93,7 @@ lessons/08_best_practices
 
 ## Best-practice lessons
 
-These examples are intentionally separate so the core lessons stay uncluttered:
+These are cumulative lessons. Every script starts from the end-to-end assistant in lesson 07 and adds one concern:
 
 ```bash
 python lessons/08_best_practices/01_tracing.py
@@ -103,7 +104,7 @@ python lessons/08_best_practices/05_llm_judge.py
 python lessons/08_best_practices/06_monitoring.py
 ```
 
-They use local files and standard Python by default. Langfuse integration is shown as an optional next step and is not required to run the course. Presidio is also optional; the guardrail lesson includes a small dependency-free baseline first.
+`01_tracing.py` adds Langfuse agent, generation, tool, and guardrail observations. Set `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, and optionally `LANGFUSE_BASE_URL` when you want to publish traces; without them, the local agent still runs. `02_caching.py` adds deterministic lookup caching. `03_guardrails.py` redacts PII before a separate scrutiny agent checks scope and safety. `04_evals.py` runs the dataset in `data/eval_cases.json` and checks the answer plus tool trajectory. `05_llm_judge.py` adds a local-model judge. `06_monitoring.py` aggregates scores and publishes them as Langfuse trace scores.
 
 ## Design choices
 
@@ -111,6 +112,7 @@ They use local files and standard Python by default. Langfuse integration is sho
 - **One shared model helper:** lessons focus on agent concepts, not repeated model setup.
 - **Small local model:** no paid service, API key, or GPU requirement.
 - **Synthetic facts:** everyone gets the same data and can inspect it.
+- **Real source artifacts:** tools return evidence locations that point to files students can open, not invented source labels.
 - **Typed boundaries:** Pydantic models make tool inputs and outputs easy to see.
 - **No tests in the course:** students run each lesson directly and inspect the output.
 

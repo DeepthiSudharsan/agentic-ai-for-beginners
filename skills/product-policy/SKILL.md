@@ -5,7 +5,7 @@ description: Answer questions about Northstar account, card, and loan fees, APRs
 
 # Product policy skill
 
-Use this skill for product comparisons, fees, APRs, opening deposits, or “which product” questions.
+Use this skill for product comparisons, fees, APRs, opening deposits, or “which product” questions. The evidence is in `data/sources/northstar_product_guide.docx` and the readable teaching copy is `data/sources/product_policies.md`.
 
 Procedure:
 

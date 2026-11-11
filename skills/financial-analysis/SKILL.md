@@ -5,7 +5,7 @@ description: Analyze Northstar Digital Bank quarterly performance using exact me
 
 # Financial analysis skill
 
-Use this skill for questions about revenue, net income, deposits, loans, net interest margin, charge-offs, margins, growth, or quarter-over-quarter change.
+Use this skill for questions about revenue, net income, deposits, loans, net interest margin, charge-offs, margins, growth, or quarter-over-quarter change. The evidence is in `data/sources/northstar_investor_brief.pdf` and the tabular teaching copy is `data/sources/financials.csv`.
 
 Procedure:
 

@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 agent_trace.jsonl
 .agent-memory/
+agent_eval_results.json

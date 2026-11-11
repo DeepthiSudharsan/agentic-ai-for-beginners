@@ -1,7 +1,7 @@
 from pydantic_ai import Agent
 
 
-def chat(agent: Agent, toolsets: list | None = None) -> None:
+def chat(agent: Agent, toolsets: list | None = None, runner=None) -> None:
     """Run a real multi-turn terminal chat.
 
     Pydantic AI returns the complete conversation for a run. We pass that
@@ -16,11 +16,10 @@ def chat(agent: Agent, toolsets: list | None = None) -> None:
             return
         if question:
             try:
-                result = agent.run_sync(
-                    question,
-                    message_history=message_history,
-                    toolsets=toolsets,
-                )
+                if runner is None:
+                    result = agent.run_sync(question, message_history=message_history, toolsets=toolsets)
+                else:
+                    result = runner(question, message_history)
                 message_history = result.all_messages()
                 print(f"Assistant: {result.output}\n")
             except Exception as error:

@@ -1,0 +1,6 @@
+customer_id,segment,tenure_years,products,monthly_card_spend_usd,support_tickets_90d,days_since_login,missed_payments_12m,balance_usd
+C1001,Everyday,4,"checking|savings",920,0,2,0,8400
+C1002,Everyday,1,checking,180,3,26,0,400
+C1003,Premium,6,"checking|savings|credit_card|personal_loan",2400,1,5,0,42000
+C1004,Everyday,2,"checking|credit_card",650,4,41,2,1200
+C1005,Small business,3,"checking|savings|business_card",5100,2,9,0,18500
