@@ -1,7 +1,10 @@
 """Lesson 08.2: lesson 08.1 plus safe tool-result caching."""
 import os
+import sys
 from functools import lru_cache
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 os.environ["LANGFUSE_TRACE_GENERATION"] = "1"
 

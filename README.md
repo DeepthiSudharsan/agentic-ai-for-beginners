@@ -113,6 +113,7 @@ python lessons/08_best_practices/06_monitoring.py
 - **Small local model:** no paid service, API key, or GPU requirement.
 - **Synthetic facts:** everyone gets the same data and can inspect it.
 - **Real source artifacts:** tools return evidence locations that point to files students can open, not invented source labels.
+- **Multiple source formats:** the shared data layer reads the PDF, both CSVs, Excel workbook, Word guide, Markdown policy mirror, and JSON index; later lessons expose those same sources through tools.
 - **Typed boundaries:** Pydantic models make tool inputs and outputs easy to see.
 - **No tests in the course:** students run each lesson directly and inspect the output.
 

@@ -12,3 +12,5 @@ These are the source artifacts for the course. `data/finance_facts.json` is a sm
 | `product_policies.md` | Markdown | readable policy source for beginners |
 
 The PDF, workbook, and Word document are intentionally small but formatted artifacts. Students should open them and compare their content with the tool outputs and the normalized JSON. The PDF has a summary page plus one KPI table per quarter. Customer citations use the stable `customer_id` rather than a fragile spreadsheet row number.
+
+The shared tools read the artifacts directly: `pypdf` reads the PDF, `openpyxl` reads the workbook, `python-docx` reads the Word document, and the standard library reads the CSV and Markdown files. The Word policy is cross-checked against the Markdown mirror. The JSON is only the normalized index used to identify the company and available periods.

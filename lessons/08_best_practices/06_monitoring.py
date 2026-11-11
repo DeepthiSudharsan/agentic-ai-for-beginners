@@ -1,7 +1,10 @@
 """Lesson 08.6: monitor the evaluated assistant and publish trace scores."""
 import importlib
 import json
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 previous = importlib.import_module("lessons.08_best_practices.05_llm_judge")
 

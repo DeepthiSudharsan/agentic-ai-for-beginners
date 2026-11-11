@@ -1,7 +1,10 @@
 """Lesson 08.5: the evaluated assistant plus an LLM-as-a-judge."""
 import importlib
 import json
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from pydantic_ai import Agent
 
