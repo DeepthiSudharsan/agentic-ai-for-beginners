@@ -18,7 +18,13 @@ from pydantic_ai_harness.memory import FileStore
 from shared.cli import show_activity
 from shared.data import facts_as_text, high_retention_risk_customers, lookup_customer, lookup_financial_metric, lookup_product_policy, operating_margin, retention_risk
 from shared.model import local_model
-from shared.prompts import finance_specialist_instructions, finley_instructions, retention_specialist_instructions, scrutiny_instructions
+
+facts = facts_as_text()
+model = local_model()
+ORCHESTRATOR_INSTRUCTIONS = f"""ROLE\nYou are Finley, the Northstar finance QA orchestrator.\n\nTASK\nChoose the smallest reliable tool, specialist, MCP tool, skill, or capability for the request.\n\nCONTEXT\n{facts}\n\nDELEGATION\nFinancial metrics go to the financial specialist; customer engagement and retention go to the retention specialist; product fees go to the product tool; two-period comparisons go to MCP.\n\nGUIDELINES\nUse evidence, state limitations, and do not provide consequential financial decisions.\n\nOUTPUT\nAnswer briefly with a source. Never expose internal routing or reasoning."""
+FINANCE_INSTRUCTIONS = f"""ROLE\nYou are Northstar's financial-analysis specialist.\n\nTASK\nAnalyze quarterly metrics and calculations.\n\nCONTEXT\n{facts}\n\nOUTPUT\nReturn a concise evidence-based answer with its source."""
+RETENTION_INSTRUCTIONS = f"""ROLE\nYou are Northstar's customer-retention specialist.\n\nTASK\nExplain observable engagement signals and illustrative retention risk.\n\nCONTEXT\n{facts}\n\nGUIDELINES\nThe score is a teaching rule, not a trained prediction or credit decision.\n\nOUTPUT\nReturn a concise evidence-based answer with its source."""
+SCRUTINY_INSTRUCTIONS = """ROLE\nYou are Finley's finance-safety scrutiny agent.\n\nTASK\nDecide whether a sanitized request may reach the Northstar finance QA agent.\n\nALLOW\nNorthstar financials, products, customers, retention signals, data quality, and course questions.\n\nBLOCK\nOff-topic, investment or credit decisions, fraud, evasion, discrimination, violence, sexual content, and unethical actions.\n\nOUTPUT\nReturn only JSON: {\"allow\": true or false, \"reason\": \"short explanation\"}."""
 
 try:
     from langfuse import get_client, observe, propagate_attributes
@@ -39,9 +45,9 @@ except ImportError:
 
 # COPIED FROM LESSON 08.3: the complete guarded assistant remains.
 server_file = Path(__file__).parents[1] / "04_mcp" / "server.py"
-agent = Agent(local_model(), instructions=finley_instructions(facts_as_text(), end_to_end=True), capabilities=[LocalWorkspace("."), Skills("skills"), MCP(local=server_file, id="northstar-finance"), Memory(FileStore(".agent-memory")), Thinking(effort="low")])
-finance_specialist = Agent(local_model(), instructions=finance_specialist_instructions(facts_as_text()))
-research_specialist = Agent(local_model(), instructions=retention_specialist_instructions(facts_as_text()))
+agent = Agent(model, instructions=ORCHESTRATOR_INSTRUCTIONS, capabilities=[LocalWorkspace("."), Skills("skills"), MCP(local=server_file, id="northstar-finance"), Memory(FileStore(".agent-memory")), Thinking(effort="low")])
+finance_specialist = Agent(model, instructions=FINANCE_INSTRUCTIONS)
+research_specialist = Agent(model, instructions=RETENTION_INSTRUCTIONS)
 
 
 @agent.tool_plain
@@ -102,7 +108,7 @@ def list_high_retention_risk_customers(customer_id: str = "") -> str:
     return high_retention_risk_customers(customer_id)
 
 
-scrutiny_agent = Agent(local_model(), instructions=scrutiny_instructions())
+scrutiny_agent = Agent(model, instructions=SCRUTINY_INSTRUCTIONS)
 
 
 def redact_pii(question: str) -> str:

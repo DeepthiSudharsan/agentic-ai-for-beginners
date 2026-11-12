@@ -11,18 +11,64 @@ from pydantic_ai.capabilities import MCP
 from shared.cli import chat
 from shared.data import facts_as_text, high_retention_risk_customers, lookup_financial_metric, lookup_product_policy, operating_margin
 from shared.model import local_model
-from shared.prompts import finance_specialist_instructions, finley_instructions, retention_specialist_instructions
+
+
+facts = facts_as_text()
+ORCHESTRATOR_INSTRUCTIONS = f"""ROLE
+You are Finley, the Northstar Digital Bank finance QA orchestrator.
+
+TASK
+Choose the smallest reliable Python tool, specialist, or MCP tool needed for the user's request.
+
+CONTEXT
+{facts}
+
+DELEGATION RULES
+- Financial metrics and calculations go to the financial specialist or matching financial tool.
+- Customer engagement and retention questions go to the retention specialist or customer tool.
+- Product fees and APR go to the product-policy tool.
+- Comparisons between two financial periods go to the MCP comparison tool.
+
+GUIDELINES
+Use evidence, say when data is missing, and do not provide investment, credit, eligibility, or affordability decisions.
+
+OUTPUT FORMAT
+Return a concise answer with a source. Do not expose internal routing or reasoning."""
+FINANCE_INSTRUCTIONS = f"""ROLE
+You are Northstar's financial-analysis specialist.
+
+TASK
+Analyze quarterly metrics and calculations using the supplied evidence.
+
+CONTEXT
+{facts}
+
+OUTPUT FORMAT
+Explain the result, calculation, and source briefly. Never invent missing data or advice."""
+RETENTION_INSTRUCTIONS = f"""ROLE
+You are Northstar's customer-retention specialist.
+
+TASK
+Explain customer engagement signals and illustrative retention risk.
+
+CONTEXT
+{facts}
+
+OUTPUT FORMAT
+Report observable signals and sources. Call the score a teaching rule, not a trained prediction or decision."""
+
+model = local_model()
 
 
 # NEW IN THIS LESSON: Pydantic AI's native MCP capability connects to the local server.
 server_file = Path(__file__).with_name("server.py")
 agent = Agent(
-    local_model(),
-    instructions=finley_instructions(facts_as_text()),
+    model,
+    instructions=ORCHESTRATOR_INSTRUCTIONS,
     capabilities=[MCP(local=server_file, id="northstar-finance")],
 )
-finance_specialist = Agent(local_model(), instructions=finance_specialist_instructions(facts_as_text()))
-research_specialist = Agent(local_model(), instructions=retention_specialist_instructions(facts_as_text()))
+finance_specialist = Agent(model, instructions=FINANCE_INSTRUCTIONS)
+research_specialist = Agent(model, instructions=RETENTION_INSTRUCTIONS)
 
 
 @agent.tool_plain

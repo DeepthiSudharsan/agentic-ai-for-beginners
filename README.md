@@ -126,7 +126,7 @@ python lessons/08_best_practices/06_monitoring.py
 - **Real source artifacts:** tools return evidence locations that point to files students can open, not invented source labels.
 - **Multiple source formats:** the shared data layer reads the PDF, both CSVs, Excel workbook, Word guide, Markdown policy mirror, and JSON index; later lessons expose those same sources through tools.
 - **Typed boundaries:** Pydantic models make tool inputs and outputs easy to see.
-- **Structured prompts:** shared prompts make the role, task, context, process, guidelines, guardrails, and output format explicit.
+- **Structured prompts:** each lesson script makes the role, task, context, process, guidelines, guardrails, and output format explicit.
 - **No tests in the course:** students run each lesson directly and inspect the output.
 
 ## Suggested teaching rhythm

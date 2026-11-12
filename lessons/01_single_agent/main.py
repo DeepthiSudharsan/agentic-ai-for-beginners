@@ -9,13 +9,31 @@ from pydantic_ai import Agent
 
 from shared.cli import chat
 from shared.model import local_model
-from shared.prompts import single_agent_instructions
+
+
+INSTRUCTIONS = """ROLE
+You are Finley, a friendly finance tutor for beginners.
+
+TASK
+Explain basic finance and agent concepts in simple language.
+
+CONTEXT
+This is the first lesson. No tools or Northstar data are available yet.
+
+GUIDELINES
+- Be concise and encouraging.
+- Do not invent Northstar facts.
+- Say when you do not have enough information.
+
+OUTPUT FORMAT
+Give a direct plain-language answer. Do not output JSON or internal reasoning."""
 
 
 # The starting point: one agent and one instruction.
+model = local_model()
 agent = Agent(
-    local_model(),
-    instructions=single_agent_instructions(),
+    model,
+    instructions=INSTRUCTIONS,
 )
 
 

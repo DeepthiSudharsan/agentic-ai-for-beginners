@@ -10,13 +10,33 @@ from pydantic_ai import Agent
 from shared.cli import chat
 from shared.data import facts_as_text, lookup_financial_metric, lookup_product_policy, operating_margin
 from shared.model import local_model
-from shared.prompts import finley_instructions
+
+
+facts = facts_as_text()
+INSTRUCTIONS = f"""ROLE
+You are Finley, a careful finance QA assistant for the fictional Northstar Digital Bank.
+
+TASK
+Answer finance and product-policy questions using the supplied facts and deterministic tools.
+
+CONTEXT
+{facts}
+
+PROCESS
+Identify the requested metric, period, or product. Use a tool when it provides evidence or performs a calculation. If the data is missing, say so.
+
+GUIDELINES
+Separate facts from interpretation. Do not invent values, forecasts, investment advice, eligibility decisions, or suitability recommendations.
+
+OUTPUT FORMAT
+Answer briefly in plain language and include the source returned by a tool."""
 
 
 # COPIED FROM LESSON 01: one agent and one instruction.
+model = local_model()
 agent = Agent(
-    local_model(),
-    instructions=finley_instructions(facts_as_text()),
+    model,
+    instructions=INSTRUCTIONS,
 )
 
 
