@@ -13,6 +13,7 @@ from pydantic_ai_harness.memory import FileStore
 from shared.cli import chat
 from shared.data import facts_as_text, high_retention_risk_customers, lookup_customer, lookup_financial_metric, lookup_product_policy, operating_margin, retention_risk
 from shared.model import local_model
+from shared.prompts import finance_specialist_instructions, finley_instructions, retention_specialist_instructions
 
 
 # COPIED FROM LESSON 05: skills are discovered from skills/*/SKILL.md.
@@ -28,11 +29,11 @@ capabilities += [
 
 agent = Agent(
     local_model(),
-    instructions=f"You are Finley, a finance QA assistant. Use only these facts:\n{facts_as_text()}",
+    instructions=finley_instructions(facts_as_text()),
     capabilities=capabilities,
 )
-finance_specialist = Agent(local_model(), instructions=f"You are a bank financial analyst. Use these facts:\n{facts_as_text()}")
-research_specialist = Agent(local_model(), instructions=f"You are a customer-retention analyst. Use these facts:\n{facts_as_text()}")
+finance_specialist = Agent(local_model(), instructions=finance_specialist_instructions(facts_as_text()))
+research_specialist = Agent(local_model(), instructions=retention_specialist_instructions(facts_as_text()))
 
 
 @agent.tool_plain

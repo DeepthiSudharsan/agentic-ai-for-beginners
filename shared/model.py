@@ -109,10 +109,15 @@ def _respond(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         tool_instruction = "There are no functions available. Answer the user directly in one or two short sentences. Do not output JSON, tool names, or analysis."
         routing = ""
     prompt = (
-        "You are a helpful finance course assistant. Answer briefly and only use facts supplied in the conversation.\n"
+        "ROLE\nYou are the local language model inside a Pydantic AI finance agent.\n\n"
+        "TASK\nAnswer the user's latest request using only the conversation and available tool results.\n\n"
+        "TOOL DECISION\n"
         f"{tool_instruction}\n"
-        "After a function returns, answer the user's original question directly; never repeat tool calls or JSON.\n"
-        f"Available functions:\n{json.dumps(tools)}{routing}\n\nConversation:\n{_message_text(messages)}\nAnswer:"
+        "After a function returns, answer the original request directly; never repeat tool calls or JSON.\n\n"
+        f"AVAILABLE FUNCTIONS\n{json.dumps(tools)}{routing}\n\n"
+        f"CONVERSATION\n{_message_text(messages)}\n\n"
+        "OUTPUT FORMAT\nReturn one concise natural-language answer, or exactly one tool-call JSON object when a function is needed.\n\n"
+        "ANSWER\n"
     )
     result = _pipeline()(prompt, max_new_tokens=180, do_sample=False, return_full_text=False)[0]["generated_text"].strip()
     call = _extract_json(result)

@@ -10,12 +10,13 @@ from pydantic_ai import Agent
 from shared.cli import chat
 from shared.data import facts_as_text, lookup_financial_metric, lookup_product_policy, operating_margin
 from shared.model import local_model
+from shared.prompts import finley_instructions
 
 
 # COPIED FROM LESSON 01: one agent and one instruction.
 agent = Agent(
     local_model(),
-    instructions=f"You are Finley, a finance QA assistant. Use only these facts:\n{facts_as_text()}",
+    instructions=finley_instructions(facts_as_text()),
 )
 
 

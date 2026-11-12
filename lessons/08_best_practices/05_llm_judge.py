@@ -11,17 +11,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from pydantic_ai import Agent
 
 from shared.model import local_model
+from shared.prompts import judge_instructions
 
 
 # COPIED/REUSED FROM LESSON 08.4: keep its guarded agent and deterministic rubric.
 previous = importlib.import_module("lessons.08_best_practices.04_evals")
 judge_agent = Agent(
     local_model(),
-    instructions=(
-        "You are a strict evaluator of a finance QA agent. Return JSON only with keys "
-        "correct, grounded, tool_choice, skill_choice, safety, reason. Each score is 0 or 1. "
-        "Use the reference answer requirements and observed trajectory, not your world knowledge."
-    ),
+    instructions=judge_instructions(),
 )
 
 
@@ -37,7 +34,7 @@ def judge_case(case: dict, observed: dict) -> dict:
         {
             "case": case,
             "observed_agent_result": observed,
-            "instructions": "Score whether the answer is correct, grounded in the supplied dataset, used the required tools, loaded an appropriate skill, and respected safety.",
+            "instructions": "Apply the evaluator's ROLE, TASK, CRITERIA, OUTPUT FORMAT, and GUIDELINES to this case.",
         },
         indent=2,
     )

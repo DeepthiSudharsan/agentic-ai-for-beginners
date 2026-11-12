@@ -18,6 +18,7 @@ from pydantic_ai_harness.memory import FileStore
 from shared.cli import show_activity
 from shared.data import facts_as_text, high_retention_risk_customers, lookup_customer, lookup_financial_metric, lookup_product_policy, operating_margin, retention_risk
 from shared.model import local_model
+from shared.prompts import finance_specialist_instructions, finley_instructions, retention_specialist_instructions, scrutiny_instructions
 
 try:
     from langfuse import get_client, observe, propagate_attributes
@@ -38,9 +39,9 @@ except ImportError:
 
 # COPIED FROM LESSON 08.3: the complete guarded assistant remains.
 server_file = Path(__file__).parents[1] / "04_mcp" / "server.py"
-agent = Agent(local_model(), instructions=f"You are Finley, a finance QA assistant. Answer only from these facts. If data is missing, say so.\n\n{facts_as_text()}", capabilities=[LocalWorkspace("."), Skills("skills"), MCP(local=server_file, id="northstar-finance"), Memory(FileStore(".agent-memory")), Thinking(effort="low")])
-finance_specialist = Agent(local_model(), instructions=f"You are a bank financial analyst. Use these facts:\n{facts_as_text()}")
-research_specialist = Agent(local_model(), instructions=f"You are a customer-retention analyst. Use these facts:\n{facts_as_text()}")
+agent = Agent(local_model(), instructions=finley_instructions(facts_as_text(), end_to_end=True), capabilities=[LocalWorkspace("."), Skills("skills"), MCP(local=server_file, id="northstar-finance"), Memory(FileStore(".agent-memory")), Thinking(effort="low")])
+finance_specialist = Agent(local_model(), instructions=finance_specialist_instructions(facts_as_text()))
+research_specialist = Agent(local_model(), instructions=retention_specialist_instructions(facts_as_text()))
 
 
 @agent.tool_plain
@@ -94,7 +95,7 @@ def list_high_retention_risk_customers(customer_id: str = "") -> str:
     return high_retention_risk_customers(customer_id)
 
 
-scrutiny_agent = Agent(local_model(), instructions="You are a finance safety reviewer. Return JSON only with allow and reason. Allow Northstar finance, product, retention, and data-quality questions. Block off-topic, unethical, fraudulent, discriminatory, violent, or investment-advice requests.")
+scrutiny_agent = Agent(local_model(), instructions=scrutiny_instructions())
 
 
 def redact_pii(question: str) -> str:

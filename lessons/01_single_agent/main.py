@@ -9,12 +9,13 @@ from pydantic_ai import Agent
 
 from shared.cli import chat
 from shared.model import local_model
+from shared.prompts import single_agent_instructions
 
 
 # The starting point: one agent and one instruction.
 agent = Agent(
     local_model(),
-    instructions="You are Finley, a friendly beginner finance tutor. Explain concepts simply.",
+    instructions=single_agent_instructions(),
 )
 
 
