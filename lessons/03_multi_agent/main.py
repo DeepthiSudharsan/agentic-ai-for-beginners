@@ -49,14 +49,22 @@ research_specialist = Agent(
 # NEW IN THIS LESSON: the orchestrator chooses the specialist through tools.
 @agent.tool_plain
 async def ask_finance_specialist(question: str) -> str:
-    """Use for finance concepts and calculations."""
+    """Delegate quarterly financial metrics, comparisons, margins, and calculations.
+
+    Do not use for customer records, engagement, retention risk, product fees, or policy questions.
+    Pass the user's complete finance question so the specialist can answer with evidence.
+    """
     result = await finance_specialist.run(question)
     return result.output
 
 
 @agent.tool_plain
 async def ask_research_specialist(question: str) -> str:
-    """Use for summaries and evidence questions."""
+    """Delegate customer engagement, support history, missed payments, and retention questions.
+
+    Do not use for quarterly financial calculations or product-policy questions.
+    Pass the user's complete customer question so the specialist can inspect the evidence.
+    """
     result = await research_specialist.run(question)
     return result.output
 
@@ -64,19 +72,31 @@ async def ask_research_specialist(question: str) -> str:
 # NEW IN THIS LESSON: customer tools support the retention specialist.
 @agent.tool_plain
 def lookup_customer_record(customer_id: str) -> str:
-    """Look up one sample customer by ID."""
+    """Look up one customer record by exact ID, such as C1004.
+
+    Use this for a specific customer's segment, products, balance, activity, or support fields.
+    Do not use this to list all high-risk customers; use the aggregate risk tool for that.
+    """
     return lookup_customer(customer_id)
 
 
 @agent.tool_plain
 def calculate_retention_risk(customer_id: str) -> str:
-    """Explain the illustrative retention-risk rule for one sample customer."""
+    """Calculate the illustrative retention-risk score for one exact customer ID.
+
+    Use this only when the question concerns one customer. The score is a transparent teaching rule,
+    not a trained churn model, credit decision, or recommendation.
+    """
     return retention_risk(customer_id)
 
 
 @agent.tool_plain
 def list_high_retention_risk_customers(customer_id: str = "") -> str:
-    """List all sample customers with a high illustrative retention-risk score."""
+    """List every sample customer whose illustrative retention-risk score is high.
+
+    Use this for questions asking which or all customers meet the high-risk rule. The optional
+    argument is ignored so the tool remains tolerant of an unnecessary model-supplied ID.
+    """
     return high_retention_risk_customers(customer_id)
 
 

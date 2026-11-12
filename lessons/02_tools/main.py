@@ -23,19 +23,25 @@ agent = Agent(
 # NEW IN THIS LESSON: typed Python functions become agent tools.
 @agent.tool_plain
 def lookup_metric(metric: str, period: str) -> str:
-    """Look up a reported bank metric for a quarter."""
+    """Look up one reported Northstar financial metric for one quarter.
+
+    Use for a single metric and period, such as revenue in Q2 2024. Do not use for calculations the tool does not provide.
+    """
     return lookup_financial_metric(metric, period)
 
 
 @agent.tool_plain
 def calculate_net_income_margin(period: str) -> str:
-    """Calculate net income as a percentage of revenue for a quarter."""
+    """Calculate net income divided by revenue for one quarter as a percentage."""
     return operating_margin(period)
 
 
 @agent.tool_plain
 def lookup_product(product: str) -> str:
-    """Look up fees and APR for one bank product."""
+    """Look up exact fees and APR for one Northstar product.
+
+    Use for product-policy facts only; do not infer eligibility or suitability.
+    """
     return lookup_product_policy(product)
 
 

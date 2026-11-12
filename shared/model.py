@@ -85,36 +85,20 @@ def _respond(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         for tool in info.function_tools
     ]
     if tools:
-        tool_names = {tool.name for tool in info.function_tools}
         tool_instruction = (
             "If a listed function is useful, output ONLY one JSON object in this exact shape: "
             '{"tool": "function_name", "args": {"argument": "value"}}. '
             "Otherwise answer in one or two short sentences."
         )
-        routing_hints = []
-        if "list_high_retention_risk_customers" in tool_names:
-            routing_hints.append("questions asking which/all customers have high retention risk -> list_high_retention_risk_customers")
-        if "calculate_retention_risk" in tool_names:
-            routing_hints.append("questions asking about one customer's risk -> calculate_retention_risk")
-        if "lookup_customer_record" in tool_names:
-            routing_hints.append("questions asking for one customer's record -> lookup_customer_record")
-        if "lookup_product" in tool_names:
-            routing_hints.append("annual fee, APR, or product policy -> lookup_product")
-        if "lookup_metric" in tool_names:
-            routing_hints.append("a named quarterly metric -> lookup_metric")
-        if "calculate_net_income_margin" in tool_names:
-            routing_hints.append("net-income margin -> calculate_net_income_margin")
-        routing = "\nRouting hints:\n- " + "\n- ".join(routing_hints) if routing_hints else ""
     else:
         tool_instruction = "There are no functions available. Answer the user directly in one or two short sentences. Do not output JSON, tool names, or analysis."
-        routing = ""
     prompt = (
         "ROLE\nYou are the local language model inside a Pydantic AI finance agent.\n\n"
         "TASK\nAnswer the user's latest request using only the conversation and available tool results.\n\n"
         "TOOL DECISION\n"
         f"{tool_instruction}\n"
         "After a function returns, answer the original request directly; never repeat tool calls or JSON.\n\n"
-        f"AVAILABLE FUNCTIONS\n{json.dumps(tools)}{routing}\n\n"
+        f"AVAILABLE FUNCTIONS\n{json.dumps(tools)}\n\n"
         f"CONVERSATION\n{_message_text(messages)}\n\n"
         "OUTPUT FORMAT\nReturn one concise natural-language answer, or exactly one tool-call JSON object when a function is needed.\n\n"
         "ANSWER\n"

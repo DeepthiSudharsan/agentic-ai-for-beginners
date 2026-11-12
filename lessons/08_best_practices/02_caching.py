@@ -40,6 +40,7 @@ research_specialist = Agent(local_model(), instructions=retention_specialist_ins
 @agent.tool_plain
 @observe(name="ask_finance_specialist", as_type="tool")
 async def ask_finance_specialist(question: str) -> str:
+    """Delegate quarterly financial metrics and calculations, not customer or policy questions."""
     result = await finance_specialist.run(question)
     return result.output
 
@@ -47,6 +48,7 @@ async def ask_finance_specialist(question: str) -> str:
 @agent.tool_plain
 @observe(name="ask_research_specialist", as_type="tool")
 async def ask_research_specialist(question: str) -> str:
+    """Delegate customer engagement and retention questions, not financial calculations."""
     result = await research_specialist.run(question)
     return result.output
 
@@ -54,6 +56,7 @@ async def ask_research_specialist(question: str) -> str:
 @agent.tool_plain
 @observe(name="lookup_metric", as_type="tool")
 def lookup_metric(metric: str, period: str) -> str:
+    """Look up one reported metric for one quarter; this result is safely cached."""
     return cached_metric(metric, period)
 
 
@@ -66,31 +69,35 @@ def cached_metric(metric: str, period: str) -> str:
 @agent.tool_plain
 @observe(name="calculate_net_income_margin", as_type="tool")
 def calculate_net_income_margin(period: str) -> str:
+    """Calculate net income divided by revenue for one quarter."""
     return operating_margin(period)
 
 
 @agent.tool_plain
 @observe(name="lookup_product", as_type="tool")
 def lookup_product(product: str) -> str:
+    """Look up exact product fees, APR, and opening-deposit policy fields."""
     return lookup_product_policy(product)
 
 
 @agent.tool_plain
 @observe(name="lookup_customer_record", as_type="tool")
 def lookup_customer_record(customer_id: str) -> str:
+    """Look up one customer record by exact ID; do not use for aggregate lists."""
     return lookup_customer(customer_id)
 
 
 @agent.tool_plain
 @observe(name="calculate_retention_risk", as_type="tool")
 def calculate_retention_risk(customer_id: str) -> str:
+    """Calculate one customer's illustrative retention-risk rule, not a trained prediction."""
     return retention_risk(customer_id)
 
 
 @agent.tool_plain
 @observe(name="list_high_retention_risk_customers", as_type="tool")
 def list_high_retention_risk_customers(customer_id: str = "") -> str:
-    """List all sample customers with a high illustrative retention-risk score."""
+    """List all sample customers with a high illustrative retention-risk score; use for aggregate questions."""
     return high_retention_risk_customers(customer_id)
 
 
