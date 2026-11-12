@@ -71,7 +71,7 @@ model = local_model()
 
 
 # COPIED FROM LESSON 06: the final agent uses native Pydantic AI capabilities.
-server_file = Path(__file__).parents[1] / "04_mcp" / "server.py"
+server_file = Path(__file__).parents[1] / "05_mcp" / "server.py"
 agent = Agent(
     model,
     instructions=ORCHESTRATOR_INSTRUCTIONS,

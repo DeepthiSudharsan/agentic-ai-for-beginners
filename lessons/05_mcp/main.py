@@ -7,11 +7,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from pydantic_ai import Agent
 from pydantic_ai.capabilities import LocalWorkspace, MCP, Thinking
-from pydantic_ai_harness import Memory, Skills
+from pydantic_ai_harness import Memory
 from pydantic_ai_harness.memory import FileStore
 
 from shared.cli import chat
-from shared.data import facts_as_text, high_retention_risk_customers, lookup_customer, lookup_financial_metric, lookup_product_policy, operating_margin, retention_risk
+from shared.data import facts_as_text, high_retention_risk_customers, lookup_financial_metric, lookup_product_policy, operating_margin
 from shared.model import local_model
 
 
@@ -20,23 +20,22 @@ ORCHESTRATOR_INSTRUCTIONS = f"""ROLE
 You are Finley, the Northstar Digital Bank finance QA orchestrator.
 
 TASK
-Choose the smallest reliable tool, specialist, MCP tool, skill, or capability for the user's request.
+Choose the smallest reliable Python tool, specialist, or MCP tool needed for the user's request.
 
 CONTEXT
 {facts}
 
 DELEGATION RULES
-- Financial metrics and calculations go to the financial specialist or financial tool.
+- Financial metrics and calculations go to the financial specialist or matching financial tool.
 - Customer engagement and retention questions go to the retention specialist or customer tool.
-- Product fees and APR go to the product-policy skill and tool.
-- Two-period comparisons go to the MCP comparison tool.
-- Missing or unsupported evidence goes to the data-quality skill.
+- Product fees and APR go to the product-policy tool.
+- Comparisons between two financial periods go to the MCP comparison tool.
 
 GUIDELINES
-Use memory only for useful conversation preferences. Do not invent facts or provide consequential financial decisions.
+Use evidence, say when data is missing, and do not provide investment, credit, eligibility, or affordability decisions.
 
 OUTPUT FORMAT
-Answer briefly with evidence and source. Never expose internal routing or reasoning."""
+Return a concise answer with a source. Do not expose internal routing or reasoning."""
 FINANCE_INSTRUCTIONS = f"""ROLE
 You are Northstar's financial-analysis specialist.
 
@@ -63,21 +62,18 @@ Report observable signals and sources. Call the score a teaching rule, not a tra
 model = local_model()
 
 
-# COPIED FROM LESSON 05: skills are discovered from skills/*/SKILL.md.
-capabilities = [LocalWorkspace("."), Skills("skills")]
-server_file = Path(__file__).parents[1] / "04_mcp" / "server.py"
-capabilities.append(MCP(local=server_file, id="northstar-finance"))
-
-# NEW IN THIS LESSON: native Pydantic AI capabilities.
-capabilities += [
-    Memory(FileStore(".agent-memory")),
-    Thinking(effort="low"),
-]
-
+# NEW IN THIS LESSON: Pydantic AI's native MCP capability connects to the local server.
+# COPIED FROM LESSON 04: workspace, memory, and thinking capabilities remain.
+server_file = Path(__file__).with_name("server.py")
 agent = Agent(
     model,
     instructions=ORCHESTRATOR_INSTRUCTIONS,
-    capabilities=capabilities,
+    capabilities=[
+        LocalWorkspace("."),
+        Memory(FileStore(".agent-memory")),
+        Thinking(effort="low"),
+        MCP(local=server_file, id="northstar-finance"),
+    ],
 )
 finance_specialist = Agent(model, instructions=FINANCE_INSTRUCTIONS)
 research_specialist = Agent(model, instructions=RETENTION_INSTRUCTIONS)
@@ -98,6 +94,12 @@ async def ask_research_specialist(question: str) -> str:
 
 
 @agent.tool_plain
+def list_high_retention_risk_customers(customer_id: str = "") -> str:
+    """List all sample customers with a high illustrative retention-risk score; use for aggregate questions."""
+    return high_retention_risk_customers(customer_id)
+
+
+@agent.tool_plain
 def lookup_metric(metric: str, period: str) -> str:
     """Look up one reported metric for one quarter; use MCP for period comparisons."""
     return lookup_financial_metric(metric, period)
@@ -113,24 +115,6 @@ def calculate_net_income_margin(period: str) -> str:
 def lookup_product(product: str) -> str:
     """Look up exact product fees, APR, and opening-deposit policy fields."""
     return lookup_product_policy(product)
-
-
-@agent.tool_plain
-def lookup_customer_record(customer_id: str) -> str:
-    """Look up one customer record by exact ID; do not use for aggregate lists."""
-    return lookup_customer(customer_id)
-
-
-@agent.tool_plain
-def calculate_retention_risk(customer_id: str) -> str:
-    """Calculate one customer's illustrative retention-risk rule, not a trained prediction."""
-    return retention_risk(customer_id)
-
-
-@agent.tool_plain
-def list_high_retention_risk_customers(customer_id: str = "") -> str:
-    """List all sample customers with a high illustrative retention-risk score; use for aggregate questions."""
-    return high_retention_risk_customers(customer_id)
 
 
 if __name__ == "__main__":

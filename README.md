@@ -13,9 +13,9 @@ Each lesson starts from the previous idea and adds one concept:
 | 01 | One agent and one prompt | `python lessons/01_single_agent/main.py` |
 | 02 | Tools that let an agent use Python functions | `python lessons/02_tools/main.py` |
 | 03 | An orchestrator choosing between specialist agents | `python lessons/03_multi_agent/main.py` |
-| 04 | MCP: putting tools behind a standard server boundary | `python lessons/04_mcp/main.py` |
-| 05 | Skills loaded from `SKILL.md` files | `python lessons/05_skills/main.py` |
-| 06 | Native Pydantic AI capabilities: memory and thinking | `python lessons/06_capabilities/main.py` |
+| 04 | Native Pydantic AI capabilities: memory and thinking | `python lessons/04_capabilities/main.py` |
+| 05 | MCP: putting tools behind a standard server boundary | `python lessons/05_mcp/main.py` |
+| 06 | Skills loaded from `SKILL.md` files | `python lessons/06_skills/main.py` |
 | 07 | A complete finance QA assistant | `python lessons/07_end_to_end/main.py` |
 | 08 | Best practices: tracing, caching, guardrails, and evaluation | see below |
 
@@ -94,10 +94,10 @@ data/sources/           inspectable PDF, XLSX, DOCX, CSV, and Markdown sources
 lessons/01_single_agent one agent
 lessons/02_tools        tools and tool arguments
 lessons/03_multi_agent  model-selected subagents
-lessons/04_mcp          local MCP server and Pydantic AI MCP capability
+lessons/04_capabilities native Pydantic AI capabilities
+lessons/05_mcp          local MCP server and Pydantic AI MCP capability
 skills/                 Agent Skills stored as SKILL.md files
-lessons/05_skills       discover and load skills on demand
-lessons/06_capabilities native Pydantic AI capabilities
+lessons/06_skills       discover and load skills on demand
 lessons/07_end_to_end   complete assistant
 lessons/08_best_practices
 ```

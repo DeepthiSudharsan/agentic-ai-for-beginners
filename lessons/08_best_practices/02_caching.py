@@ -36,7 +36,7 @@ except ImportError:
 
 
 # COPIED FROM LESSON 07 and LESSON 08.1: the full traced assistant remains.
-server_file = Path(__file__).parents[1] / "04_mcp" / "server.py"
+server_file = Path(__file__).parents[1] / "05_mcp" / "server.py"
 agent = Agent(model, instructions=ORCHESTRATOR_INSTRUCTIONS, capabilities=[LocalWorkspace("."), Skills("skills"), MCP(local=server_file, id="northstar-finance"), Memory(FileStore(".agent-memory")), Thinking(effort="low")])
 finance_specialist = Agent(model, instructions=FINANCE_INSTRUCTIONS)
 research_specialist = Agent(model, instructions=RETENTION_INSTRUCTIONS)

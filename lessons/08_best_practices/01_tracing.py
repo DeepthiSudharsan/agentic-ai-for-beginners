@@ -44,7 +44,7 @@ except ImportError:
         return _NoTraceContext()
 
 
-server_file = Path(__file__).parents[1] / "04_mcp" / "server.py"
+server_file = Path(__file__).parents[1] / "05_mcp" / "server.py"
 # COPIED FROM LESSON 07: the complete Finley assistant remains here.
 agent = Agent(
     model,

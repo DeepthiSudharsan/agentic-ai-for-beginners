@@ -7,7 +7,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from pydantic_ai import Agent
 from pydantic_ai.capabilities import LocalWorkspace, MCP
-from pydantic_ai_harness import Skills
+from pydantic_ai.capabilities import Thinking
+from pydantic_ai_harness import Memory, Skills
+from pydantic_ai_harness.memory import FileStore
 
 from shared.cli import chat
 from shared.data import facts_as_text, high_retention_risk_customers, lookup_customer, lookup_financial_metric, lookup_product_policy, operating_margin, retention_risk
@@ -19,7 +21,7 @@ ORCHESTRATOR_INSTRUCTIONS = f"""ROLE
 You are Finley, the Northstar Digital Bank finance QA orchestrator.
 
 TASK
-Choose the smallest reliable tool, specialist, MCP tool, or skill needed for the user's request.
+Choose the smallest reliable tool, specialist, MCP tool, skill, or capability needed for the user's request.
 
 CONTEXT
 {facts}
@@ -59,17 +61,18 @@ Report observable signals and sources. Call the score a teaching rule, not a tra
 model = local_model()
 
 
-# COPIED FROM LESSON 04: the agent still has facts, specialists, Python tools,
-# and Pydantic AI's native MCP capability.
-server_file = Path(__file__).parents[1] / "04_mcp" / "server.py"
+# COPIED FROM LESSON 05: Python tools, capabilities, and MCP remain.
+# NEW IN THIS LESSON: Skills discovers and loads the appropriate SKILL.md file.
+server_file = Path(__file__).parents[1] / "05_mcp" / "server.py"
 agent = Agent(
     model,
     instructions=ORCHESTRATOR_INSTRUCTIONS,
     capabilities=[
-        # NEW IN THIS LESSON: the agent can discover skills/SKILL.md files.
         LocalWorkspace("."),
-        Skills("skills"),
+        Memory(FileStore(".agent-memory")),
+        Thinking(effort="low"),
         MCP(local=server_file, id="northstar-finance"),
+        Skills("skills"),
     ],
 )
 finance_specialist = Agent(model, instructions=FINANCE_INSTRUCTIONS)
