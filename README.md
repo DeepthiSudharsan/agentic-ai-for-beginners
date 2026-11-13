@@ -4,6 +4,12 @@ A small, practical course for learning agentic AI with Python, [Pydantic AI](htt
 
 The course uses one simple story throughout: **Finley**, an internal assistant for a fictional digital bank. Finley answers questions about quarterly performance, customer-retention signals, and product policies. This is learning data, not investment advice, credit advice, or real customer data.
 
+<div style="color: #b00020">
+
+<strong>Important limitation:</strong> This course deliberately uses a small CPU-friendly Hugging Face model so students do not need a GPU, API key, or paid model access. Small models are less reliable at multi-turn context tracking, tool selection, MCP routing, and skill selection than larger production models. To keep the lessons predictable, the repository includes a few deterministic safeguards that validate or correct obvious tool arguments and stale context. The examples therefore demonstrate Pydantic AI agent patterns, but they should not be interpreted as a completely autonomous production agent.
+
+</div>
+
 ## What you will learn
 
 Each lesson starts from the previous idea and adds one concept:
