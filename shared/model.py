@@ -148,6 +148,23 @@ def _correct_stale_finance_tool(messages: list[ModelMessage], tool_name: str, ar
     latest_request = _latest_user_prompt(messages).lower()
     asks_for_revenue = "revenue" in latest_request
     asks_for_margin = "margin" in latest_request
+    asks_for_retention_interpretation = any(
+        phrase in latest_request for phrase in ("retention attention", "retention risk", "risk score", "signals suggest")
+    )
+    if asks_for_retention_interpretation and tool_name == "lookup_customer_record" and "calculate_retention_risk" in tool_names:
+        return "calculate_retention_risk", {"customer_id": args.get("customer_id", "")}
+    periods = PERIOD_PATTERN.findall(_latest_user_prompt(messages))
+    if (
+        tool_name == "lookup_metric"
+        and "compare_financials" in tool_names
+        and len(periods) >= 2
+        and any(word in latest_request for word in ("change", "changed", "between", "from", "growth"))
+    ):
+        return "compare_financials", {
+            "metric": args.get("metric", "").replace("_change", "").replace(" change", "").strip() or "deposits",
+            "from_period": f"{periods[0][0].upper()} {periods[0][1]}" if periods[0][1] else periods[0][0].upper(),
+            "to_period": f"{periods[1][0].upper()} {periods[1][1]}" if periods[1][1] else periods[1][0].upper(),
+        }
     if asks_for_margin and "lookup_metric" in tool_name.lower():
         margin_tool = next((name for name in tool_names if "margin" in name.lower()), None)
         if margin_tool is not None:
@@ -158,6 +175,58 @@ def _correct_stale_finance_tool(messages: list[ModelMessage], tool_name: str, ar
             corrected_args = {"metric": "revenue", "period": args.get("period", "")}
             return metric_tool, corrected_args
     return tool_name, args
+
+
+def _correct_stale_specialist(messages: list[ModelMessage], tool_name: str, args: dict, tool_names: set[str]) -> tuple[str, dict]:
+    """Keep an orchestrator from reusing the previous specialist for a new topic."""
+    latest_request = _latest_user_prompt(messages).lower()
+    finance_words = ("revenue", "deposits", "loans", "financial", "quarter", "margin", "income", "charge-off")
+    retention_words = ("customer", "retention", "risk", "login", "support ticket", "missed payment", "balance", "product mix")
+    if any(word in latest_request for word in finance_words) and "research" in tool_name.lower():
+        finance_tool = next((name for name in tool_names if "finance" in name.lower()), None)
+        if finance_tool:
+            return finance_tool, {"question": _latest_user_prompt(messages)}
+    if any(word in latest_request for word in retention_words) and "finance" in tool_name.lower():
+        research_tool = next((name for name in tool_names if "research" in name.lower()), None)
+        if research_tool:
+            return research_tool, {"question": _latest_user_prompt(messages)}
+    if "finance" in tool_name.lower() or "research" in tool_name.lower():
+        return tool_name, {"question": _latest_user_prompt(messages)}
+    return tool_name, args
+
+
+def _fallback_specialist_call(messages: list[ModelMessage], tool_names: set[str]) -> tuple[str, dict] | None:
+    """Create a specialist call when the local model answered a clear routed request directly."""
+    latest_user_index = max(
+        (index for index, message in enumerate(messages)
+         if any(getattr(part, "part_kind", "") == "user-prompt" for part in message.parts)),
+        default=-1,
+    )
+    if any(
+        getattr(part, "part_kind", "") in {"tool-return", "builtin-tool-return"}
+        for message in messages[latest_user_index + 1:]
+        for part in message.parts
+    ):
+        return None
+    latest_request = _latest_user_prompt(messages).lower()
+    finance_words = ("revenue", "deposits", "loans", "financial", "quarter", "margin", "income", "charge-off")
+    retention_words = ("customer", "retention", "risk", "login", "support ticket", "missed payment", "balance", "product mix")
+    customer_match = re.search(r"\bC\d{4}\b", _latest_user_prompt(messages), re.IGNORECASE)
+    if (
+        customer_match
+        and any(phrase in latest_request for phrase in ("retention attention", "retention risk", "risk score", "signals suggest"))
+        and "calculate_retention_risk" in tool_names
+    ):
+        return "calculate_retention_risk", {"customer_id": customer_match.group(0).upper()}
+    if any(word in latest_request for word in finance_words):
+        specialist = next((name for name in tool_names if "finance" in name.lower()), None)
+    elif any(word in latest_request for word in retention_words):
+        specialist = next((name for name in tool_names if "research" in name.lower()), None)
+    else:
+        specialist = None
+    if specialist is None:
+        return None
+    return specialist, {"question": _latest_user_prompt(messages)}
 
 
 def _extract_json(text: str) -> dict | None:
@@ -229,11 +298,16 @@ def _respond(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
             return ModelResponse(parts=[TextPart(previous_result)])
         return ModelResponse(parts=[ToolCallPart(tool_name=bare_tool_name, args={}, tool_call_id=f"local_{uuid.uuid4().hex}")])
     if call and call.get("tool") in tool_names:
-        tool_name, args = _correct_stale_finance_tool(messages, call["tool"], call.get("args", {}), tool_names)
+        tool_name, args = _correct_stale_specialist(messages, call["tool"], call.get("args", {}), tool_names)
+        tool_name, args = _correct_stale_finance_tool(messages, tool_name, args, tool_names)
         previous_result = _previous_result_for_current_turn(messages, tool_name)
         if previous_result is not None:
             return ModelResponse(parts=[TextPart(previous_result)])
         args = _ground_period_argument(messages, args)
+        return ModelResponse(parts=[ToolCallPart(tool_name=tool_name, args=args, tool_call_id=f"local_{uuid.uuid4().hex}")])
+    specialist_call = _fallback_specialist_call(messages, tool_names)
+    if specialist_call is not None:
+        tool_name, args = specialist_call
         return ModelResponse(parts=[ToolCallPart(tool_name=tool_name, args=args, tool_call_id=f"local_{uuid.uuid4().hex}")])
     tool_results = [
         str(getattr(part, "content", ""))
@@ -241,6 +315,10 @@ def _respond(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         for part in message.parts
         if getattr(part, "part_kind", "") == "tool-return" and getattr(part, "content", "")
     ]
+    if tool_results and any(name in tool_names for name in ("ask_finance_specialist", "ask_research_specialist")):
+        # The orchestrator must not replace a completed specialist answer with
+        # a second routing sentence generated by a small local model.
+        return ModelResponse(parts=[TextPart(tool_results[-1])])
     if tool_results and re.search(r"no results|need more parameters|additional information|not enough", result, re.IGNORECASE):
         result = tool_results[-1]
     # Tiny instruction models sometimes echo a tool-shaped object even when no

@@ -235,8 +235,16 @@ def lookup_product_policy(product: str) -> str:
 def lookup_customer(customer_id: str) -> str:
     for row in _customers_from_xlsx():
         if row["customer_id"].lower() == customer_id.lower():
-            row["source"] = _customer_source(customer_id)
-            return json.dumps(row)
+            return (
+                f"Customer {row['customer_id']}: segment={row['segment']}; "
+                f"tenure={row['tenure_years']} years; products={', '.join(row['products'])}; "
+                f"monthly card spend=${row['monthly_card_spend_usd']:,.0f}; "
+                f"support tickets in last 90 days={row['support_tickets_90d']}; "
+                f"days since login={row['days_since_login']}; "
+                f"missed payments in last 12 months={row['missed_payments_12m']}; "
+                f"balance=${row['balance_usd']:,.0f}. "
+                f"Source: {_customer_source(customer_id)}"
+            )
     return f"No customer record exists for {customer_id}."
 
 
