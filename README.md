@@ -17,7 +17,6 @@ Each lesson starts from the previous idea and adds one concept:
 | 05 | MCP: putting tools behind a standard server boundary | `python lessons/05_mcp/main.py` |
 | 06 | Skills loaded from `SKILL.md` files | `python lessons/06_skills/main.py` |
 | 07 | A complete finance QA assistant | `python lessons/07_end_to_end/main.py` |
-| 08 | Best practices: tracing, caching, guardrails, and evaluation | see below |
 
 The model decides whether to call a specialist or tool from the task description. There are no hard-coded `if question == ...` handoffs in the agent lessons.
 
@@ -99,23 +98,7 @@ lessons/05_mcp          local MCP server and Pydantic AI MCP capability
 skills/                 Agent Skills stored as SKILL.md files
 lessons/06_skills       discover and load skills on demand
 lessons/07_end_to_end   complete assistant
-lessons/08_best_practices
 ```
-
-## Best-practice lessons
-
-These are cumulative lessons. Every script starts from the end-to-end assistant in lesson 07 and adds one concern:
-
-```bash
-python lessons/08_best_practices/01_tracing.py
-python lessons/08_best_practices/02_caching.py
-python lessons/08_best_practices/03_guardrails.py
-python lessons/08_best_practices/04_evals.py
-python lessons/08_best_practices/05_llm_judge.py
-python lessons/08_best_practices/06_monitoring.py
-```
-
-`01_tracing.py` adds Langfuse agent, generation, tool, and guardrail observations. Set `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, and optionally `LANGFUSE_BASE_URL` when you want to publish traces; without them, the local agent still runs. `02_caching.py` adds deterministic lookup caching. `03_guardrails.py` redacts PII before a separate scrutiny agent checks scope and safety. `04_evals.py` runs the dataset in `data/eval_cases.json` and checks the answer plus tool trajectory. `05_llm_judge.py` adds a local-model judge. `06_monitoring.py` aggregates scores and publishes them as Langfuse trace scores.
 
 ## Design choices
 

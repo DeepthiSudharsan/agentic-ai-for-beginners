@@ -148,18 +148,6 @@ async def _stream_respond(messages: list[ModelMessage], info: AgentInfo):
                 )
             }
 
-
-# Best-practice tracing opts into a real Langfuse generation observation.
-# Keeping it opt-in means the introductory lessons do not require Langfuse.
-if os.getenv("LANGFUSE_TRACE_GENERATION") == "1":
-    try:
-        from langfuse import observe
-
-        _respond = observe(name="local_huggingface_generation", as_type="generation")(_respond)
-    except ImportError:
-        pass
-
-
 def local_model() -> FunctionModel:
     """Return the shared Pydantic AI model used in every lesson."""
     return FunctionModel(_respond, stream_function=_stream_respond, model_name=MODEL_NAME)
