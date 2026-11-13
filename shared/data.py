@@ -182,13 +182,21 @@ def facts_as_text() -> str:
 
 def lookup_financial_metric(metric: str, period: str) -> str:
     row = _financial_from_pdf(period)
+    aliases = {"revenue": "revenue_million_usd", "net income": "net_income_million_usd", "deposits": "deposits_million_usd", "loans": "loans_million_usd", "nim": "net_interest_margin_pct", "charge offs": "charge_off_rate_pct"}
+    key = aliases.get(metric.lower().strip(), metric.lower().strip())
+    if key not in aliases.values():
+        return f"The PDF does not contain a reported financial metric called {metric}."
     if row is None:
         return f"No financial row exists for {period}."
-    aliases = {"revenue": "revenue_million_usd", "net income": "net_income_million_usd", "deposits": "deposits_million_usd", "loans": "loans_million_usd", "nim": "net_interest_margin_pct", "charge offs": "charge_off_rate_pct"}
-    key = aliases.get(metric.lower(), metric)
     if key not in row:
         return f"The PDF does not contain a financial metric called {metric}."
-    return f"{metric} for {period}: {row[key]}. Source: {_financial_source(period)}"
+    if key.endswith("_million_usd"):
+        value = f"${row[key]:,.1f} million"
+    elif key.endswith("_pct"):
+        value = f"{row[key]:.1f}%"
+    else:
+        value = str(row[key])
+    return f"{metric} for {period}: {value}. Source: {_financial_source(period)}"
 
 
 def compare_financial_metric(metric: str, from_period: str, to_period: str) -> str:
