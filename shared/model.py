@@ -100,7 +100,7 @@ def _respond(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         "After a function returns, answer the original request directly; never repeat tool calls or JSON.\n\n"
         f"AVAILABLE FUNCTIONS\n{json.dumps(tools)}\n\n"
         f"CONVERSATION\n{_message_text(messages)}\n\n"
-        "OUTPUT FORMAT\nReturn one concise natural-language answer, or exactly one tool-call JSON object when a function is needed.\n\n"
+        "OUTPUT FORMAT\nReturn one concise natural-language answer, or exactly one tool-call JSON object when a function is needed. Do not output special end markers such as [END_OF_CONVERSATION], <|endoftext|>, or <|im_end|>.\n\n"
         "ANSWER\n"
     )
     result = _pipeline()(prompt, max_new_tokens=180, do_sample=False, return_full_text=False)[0]["generated_text"].strip()
@@ -125,7 +125,7 @@ def _respond(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
     # tool is available. Keep that protocol noise out of the student-facing CLI.
     # The small model can append a second, malformed protocol attempt after a
     # useful sentence. Keep the natural-language answer and hide that protocol.
-    for marker in ("Tool call:", '{"tool"', "```json"):
+    for marker in ("Tool call:", '{"tool"', "```json", "[END_OF_CONVERSATION]", "<|endoftext|>", "<|im_end|>"):
         if marker in result:
             result = result.split(marker, 1)[0]
     result = re.sub(r'\s*\{"tool".*', " ", result, flags=re.DOTALL)
