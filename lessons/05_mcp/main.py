@@ -62,6 +62,7 @@ Report observable signals and sources. Call the score a teaching rule, not a tra
 model = local_model()
 
 
+# Lesson source: https://github.com/DeepthiSudharsan/agentic-ai-for-beginners/blob/main/lessons/05_mcp/main.py
 # NEW IN THIS LESSON: Pydantic AI's native MCP capability connects to the local server.
 # COPIED FROM LESSON 04: workspace, memory, and thinking capabilities remain.
 server_file = Path(__file__).with_name("server.py")

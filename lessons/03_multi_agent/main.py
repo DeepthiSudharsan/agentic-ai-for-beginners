@@ -92,6 +92,7 @@ def lookup_product(product: str) -> str:
     return lookup_product_policy(product)
 
 
+# Lesson source: https://github.com/DeepthiSudharsan/agentic-ai-for-beginners/blob/main/lessons/03_multi_agent/main.py
 # NEW IN THIS LESSON: two specialist agents.
 finance_specialist = Agent(
     model,
@@ -103,6 +104,7 @@ research_specialist = Agent(
 )
 
 
+# Lesson source: https://github.com/DeepthiSudharsan/agentic-ai-for-beginners/blob/main/lessons/03_multi_agent/main.py
 # NEW IN THIS LESSON: the orchestrator chooses the specialist through tools.
 @agent.tool_plain
 async def ask_finance_specialist(question: str) -> str:
@@ -126,6 +128,7 @@ async def ask_research_specialist(question: str) -> str:
     return result.output
 
 
+# Lesson source: https://github.com/DeepthiSudharsan/agentic-ai-for-beginners/blob/main/lessons/03_multi_agent/main.py
 # NEW IN THIS LESSON: customer tools support the retention specialist.
 @agent.tool_plain
 def lookup_customer_record(customer_id: str) -> str:

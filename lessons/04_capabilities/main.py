@@ -63,6 +63,7 @@ model = local_model()
 
 
 # COPIED FROM LESSON 03: one orchestrator, specialists, and Python tools.
+# Lesson source: https://github.com/DeepthiSudharsan/agentic-ai-for-beginners/blob/main/lessons/04_capabilities/main.py
 # NEW IN THIS LESSON: native Pydantic AI capabilities for workspace context,
 # persistent memory, and provider-adaptive thinking.
 capabilities = [

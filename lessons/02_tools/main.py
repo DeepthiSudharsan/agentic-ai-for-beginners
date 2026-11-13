@@ -40,6 +40,7 @@ agent = Agent(
 )
 
 
+# Lesson source: https://github.com/DeepthiSudharsan/agentic-ai-for-beginners/blob/main/lessons/02_tools/main.py
 # NEW IN THIS LESSON: typed Python functions become agent tools.
 @agent.tool_plain
 def lookup_metric(metric: str, period: str) -> str:

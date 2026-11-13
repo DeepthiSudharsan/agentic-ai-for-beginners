@@ -108,6 +108,7 @@ def list_high_retention_risk_customers(customer_id: str = "") -> str:
     return high_retention_risk_customers(customer_id)
 
 
+# Lesson source: https://github.com/DeepthiSudharsan/agentic-ai-for-beginners/blob/main/lessons/08_best_practices/03_guardrails.py
 # NEW IN THIS LESSON: PII is redacted before any LLM scrutiny or agent call.
 @observe(name="pii_redaction", as_type="guardrail")
 def redact_pii(question: str) -> tuple[str, list[str]]:
@@ -120,6 +121,7 @@ def redact_pii(question: str) -> tuple[str, list[str]]:
     return redacted, []
 
 
+# Lesson source: https://github.com/DeepthiSudharsan/agentic-ai-for-beginners/blob/main/lessons/08_best_practices/03_guardrails.py
 # NEW IN THIS LESSON: a second local agent scrutinizes the sanitized request.
 scrutiny_agent = Agent(model, instructions=SCRUTINY_INSTRUCTIONS)
 

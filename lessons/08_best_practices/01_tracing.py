@@ -113,6 +113,7 @@ def list_high_retention_risk_customers(customer_id: str = "") -> str:
     return high_retention_risk_customers(customer_id)
 
 
+# Lesson source: https://github.com/DeepthiSudharsan/agentic-ai-for-beginners/blob/main/lessons/08_best_practices/01_tracing.py
 # NEW IN THIS LESSON: an agent observation is the parent of model/tool work.
 @observe(name="finley_agent", as_type="agent")
 def run_agent(question: str, message_history: list):

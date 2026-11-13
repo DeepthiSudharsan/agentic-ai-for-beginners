@@ -62,6 +62,7 @@ model = local_model()
 
 
 # COPIED FROM LESSON 05: Python tools, capabilities, and MCP remain.
+# Lesson source: https://github.com/DeepthiSudharsan/agentic-ai-for-beginners/blob/main/lessons/06_skills/main.py
 # NEW IN THIS LESSON: Skills discovers and loads the appropriate SKILL.md file.
 server_file = Path(__file__).parents[1] / "05_mcp" / "server.py"
 agent = Agent(
