@@ -5,14 +5,14 @@ from pathlib import Path
 os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from pydantic_ai import Agent
+from pydantic_ai import Agent, RunContext
 from pydantic_ai.capabilities import LocalWorkspace, MCP
 from pydantic_ai.capabilities import Thinking
 from pydantic_ai_harness import Memory, Skills
 from pydantic_ai_harness.memory import FileStore
 
-from shared.cli import chat
-from shared.data import facts_as_text, high_retention_risk_customers, lookup_customer, lookup_financial_metric, lookup_product_policy, operating_margin, retention_risk
+from shared.cli import chat, show_activity
+from shared.data import facts_as_text, high_retention_risk_customers, lookup_customer, lookup_financial_metric, lookup_product_policy, operating_margin, quarterly_performance_summary, retention_risk
 from shared.model import local_model
 
 
@@ -41,6 +41,12 @@ You are Northstar's financial-analysis specialist.
 TASK
 Analyze quarterly metrics and calculations using the supplied evidence.
 
+PROCESS
+Load the financial-analysis skill before answering. Then use the appropriate
+financial tool for evidence. Use the quarterly-summary tool for broad summary
+requests; use the single-metric tool only when both a metric and period are
+specified. Never invent figures from memory.
+
 CONTEXT
 {facts}
 
@@ -51,6 +57,10 @@ You are Northstar's customer-retention specialist.
 
 TASK
 Explain customer engagement signals and illustrative retention risk.
+
+PROCESS
+Load the customer-retention skill before answering. Then use the appropriate
+customer tool for evidence. Never invent customer data from memory.
 
 CONTEXT
 {facts}
@@ -76,21 +86,64 @@ agent = Agent(
         Skills("skills"),
     ],
 )
-finance_specialist = Agent(model, instructions=FINANCE_INSTRUCTIONS)
-research_specialist = Agent(model, instructions=RETENTION_INSTRUCTIONS)
+finance_specialist = Agent(
+    model,
+    instructions=FINANCE_INSTRUCTIONS,
+    capabilities=[LocalWorkspace("."), Thinking(effort="low"), Skills("skills")],
+)
+research_specialist = Agent(
+    model,
+    instructions=RETENTION_INSTRUCTIONS,
+    capabilities=[LocalWorkspace("."), Thinking(effort="low"), Skills("skills")],
+)
+
+
+@finance_specialist.tool
+async def finance_quarterly_summary(ctx: RunContext, question: str = "") -> str:
+    """Summarize the reported quarterly financial sample for broad summary requests."""
+    ctx.load_capability("financial-analysis")
+    return quarterly_performance_summary()
+
+
+@finance_specialist.tool
+async def finance_lookup_metric(ctx: RunContext, metric: str, period: str) -> str:
+    """Look up one reported metric for one specified quarter; do not use for broad summaries."""
+    ctx.load_capability("financial-analysis")
+    return lookup_financial_metric(metric, period)
+
+
+@finance_specialist.tool
+async def finance_calculate_net_income_margin(ctx: RunContext, period: str) -> str:
+    """Calculate net income divided by revenue for one quarter."""
+    ctx.load_capability("financial-analysis")
+    return operating_margin(period)
+
+
+@research_specialist.tool
+async def research_lookup_customer(ctx: RunContext, customer_id: str) -> str:
+    """Look up one customer record by exact customer ID."""
+    ctx.load_capability("customer-retention")
+    return lookup_customer(customer_id)
+
+
+@research_specialist.tool
+async def research_calculate_retention_risk(ctx: RunContext, customer_id: str) -> str:
+    """Calculate one customer's illustrative retention-risk score."""
+    ctx.load_capability("customer-retention")
+    return retention_risk(customer_id)
 
 
 @agent.tool_plain
 async def ask_finance_specialist(question: str) -> str:
     """Delegate quarterly financial metrics and calculations, not customer or policy questions."""
-    result = await finance_specialist.run(question)
+    result = await finance_specialist.run(question, event_stream_handler=show_activity)
     return result.output
 
 
 @agent.tool_plain
 async def ask_research_specialist(question: str) -> str:
     """Delegate customer engagement and retention questions, not financial calculations."""
-    result = await research_specialist.run(question)
+    result = await research_specialist.run(question, event_stream_handler=show_activity)
     return result.output
 
 

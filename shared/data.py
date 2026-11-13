@@ -213,6 +213,21 @@ def compare_financial_metric(metric: str, from_period: str, to_period: str) -> s
     return f"{metric} changed from {left[key]} in {from_period} to {right[key]} in {to_period}: {change:+.1f} ({percent:+.1f}%). Sources: {_financial_source(from_period)}, {_financial_source(to_period)}"
 
 
+def quarterly_performance_summary() -> str:
+    """Return a concise summary of the reported quarterly financial sample."""
+    rows = []
+    for period in ("Q1 2024", "Q2 2024", "Q3 2024", "Q4 2024"):
+        row = _financial_from_csv(period)
+        if row is not None:
+            rows.append(
+                f"{period}: revenue ${row['revenue_million_usd']:.1f}m; "
+                f"net income ${row['net_income_million_usd']:.1f}m; "
+                f"deposits ${row['deposits_million_usd']:.1f}m; "
+                f"loans ${row['loans_million_usd']:.1f}m"
+            )
+    return "Quarterly performance summary: " + " | ".join(rows) + ". Source: data/sources/financials.csv"
+
+
 def operating_margin(period: str) -> str:
     row = _financial_from_csv(period)
     if row is None:
