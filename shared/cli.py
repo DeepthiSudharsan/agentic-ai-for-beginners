@@ -25,7 +25,7 @@ async def show_activity(_context, events) -> None:
         name = getattr(part, "tool_name", "unknown tool")
         kind = getattr(part, "tool_kind", None)
         capability_id = getattr(part, "capability_id", None)
-        if kind == "mcp_server" or str(name).startswith("mcp_server:"):
+        if kind == "mcp_server" or str(name).startswith("mcp_server:") or name == "compare_financials":
             label = "MCP"
         elif name == "load_capability" or kind == "capability-load":
             label = "skill/capability"

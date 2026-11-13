@@ -74,10 +74,18 @@ def _message_text(messages: list[ModelMessage]) -> str:
     return "\n".join(parts)
 
 
+def _is_cli_user_prompt(part: object) -> bool:
+    """Identify real CLI input, excluding capability-generated user content."""
+    if getattr(part, "part_kind", "") != "user-prompt":
+        return False
+    content = getattr(part, "content", None)
+    return isinstance(content, str) and not content.lstrip().startswith("[TextContent(")
+
+
 def _latest_user_prompt(messages: list[ModelMessage]) -> str:
     for message in reversed(messages):
         for part in reversed(message.parts):
-            if getattr(part, "part_kind", "") == "user-prompt":
+            if _is_cli_user_prompt(part):
                 return str(getattr(part, "content", ""))
     return ""
 
@@ -92,7 +100,7 @@ def _period_from_conversation(messages: list[ModelMessage]) -> str | None:
         str(getattr(part, "content", ""))
         for message in messages
         for part in message.parts
-        if getattr(part, "part_kind", "") == "user-prompt"
+        if _is_cli_user_prompt(part)
     ]
     if not user_prompts:
         return None
@@ -143,6 +151,34 @@ def _ground_period_argument(messages: list[ModelMessage], args: dict) -> dict:
     return grounded_args
 
 
+def _ground_comparison_arguments(messages: list[ModelMessage], args: dict) -> dict:
+    """Ground comparison metric and periods in the latest user request."""
+    request = _latest_user_prompt(messages)
+    lowered = request.lower()
+    periods = list(PERIOD_PATTERN.finditer(request))
+    metric = next((name for name in ("revenue", "deposits", "loans", "net income") if name in lowered), None)
+    grounded_args = dict(args)
+    if metric:
+        grounded_args["metric"] = metric
+    if len(periods) >= 2:
+        grounded_args["from_period"] = f"{periods[0].group(1).upper()} {periods[0].group(2)}"
+        grounded_args["to_period"] = f"{periods[1].group(1).upper()} {periods[1].group(2)}"
+    return grounded_args
+
+
+def _mcp_comparison_call(messages: list[ModelMessage], tool_names: set[str]) -> tuple[str, dict] | None:
+    """Select the comparison capability for an explicit two-period comparison."""
+    request = _latest_user_prompt(messages)
+    lowered = request.lower()
+    periods = list(PERIOD_PATTERN.finditer(request))
+    comparison_words = ("change", "changed", "between", "from", "growth", "increase", "decrease")
+    comparison_tool = next((name for name in tool_names if "compare_financials" in name), None)
+    metric = next((name for name in ("revenue", "deposits", "loans", "net income") if name in lowered), None)
+    if comparison_tool and metric and len(periods) >= 2 and any(word in lowered for word in comparison_words):
+        return comparison_tool, _ground_comparison_arguments(messages, {"metric": metric})
+    return None
+
+
 def _correct_stale_finance_tool(messages: list[ModelMessage], tool_name: str, args: dict, tool_names: set[str]) -> tuple[str, dict]:
     """Prevent a stale finance tool from answering a different request."""
     latest_request = _latest_user_prompt(messages).lower()
@@ -154,6 +190,10 @@ def _correct_stale_finance_tool(messages: list[ModelMessage], tool_name: str, ar
     if asks_for_retention_interpretation and tool_name == "lookup_customer_record" and "calculate_retention_risk" in tool_names:
         return "calculate_retention_risk", {"customer_id": args.get("customer_id", "")}
     periods = PERIOD_PATTERN.findall(_latest_user_prompt(messages))
+    if "compare_financials" in tool_name and any(
+        word in latest_request for word in ("change", "changed", "between", "from", "growth")
+    ):
+        return tool_name, _ground_comparison_arguments(messages, args)
     if (
         tool_name == "lookup_metric"
         and "compare_financials" in tool_names
@@ -199,7 +239,7 @@ def _fallback_specialist_call(messages: list[ModelMessage], tool_names: set[str]
     """Create a specialist call when the local model answered a clear routed request directly."""
     latest_user_index = max(
         (index for index, message in enumerate(messages)
-         if any(getattr(part, "part_kind", "") == "user-prompt" for part in message.parts)),
+         if any(_is_cli_user_prompt(part) for part in message.parts)),
         default=-1,
     )
     if any(
@@ -243,7 +283,7 @@ def _previous_result_for_current_turn(messages: list[ModelMessage], tool_name: s
     """Return a tool result if this same tool already ran during this user turn."""
     latest_user_index = -1
     for index, message in enumerate(messages):
-        if any(getattr(part, "part_kind", "") == "user-prompt" for part in message.parts):
+        if any(_is_cli_user_prompt(part) for part in message.parts):
             latest_user_index = index
 
     for message in messages[latest_user_index + 1:]:
@@ -285,6 +325,13 @@ def _respond(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
     result = _pipeline()(prompt, max_new_tokens=180, do_sample=False, return_full_text=False)[0]["generated_text"].strip()
     call = _extract_json(result)
     tool_names = {tool.name for tool in info.function_tools}
+    mcp_call = _mcp_comparison_call(messages, tool_names)
+    if mcp_call is not None:
+        tool_name, args = mcp_call
+        previous_result = _previous_result_for_current_turn(messages, tool_name)
+        if previous_result is not None:
+            return ModelResponse(parts=[TextPart(previous_result)])
+        return ModelResponse(parts=[ToolCallPart(tool_name=tool_name, args=args, tool_call_id=f"local_{uuid.uuid4().hex}")])
     for tool_name in tool_names:
         previous_result = _previous_result_for_current_turn(messages, tool_name)
         if previous_result is not None and tool_name in result:
@@ -304,6 +351,10 @@ def _respond(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
         if previous_result is not None:
             return ModelResponse(parts=[TextPart(previous_result)])
         args = _ground_period_argument(messages, args)
+        return ModelResponse(parts=[ToolCallPart(tool_name=tool_name, args=args, tool_call_id=f"local_{uuid.uuid4().hex}")])
+    mcp_call = _mcp_comparison_call(messages, tool_names)
+    if mcp_call is not None:
+        tool_name, args = mcp_call
         return ModelResponse(parts=[ToolCallPart(tool_name=tool_name, args=args, tool_call_id=f"local_{uuid.uuid4().hex}")])
     specialist_call = _fallback_specialist_call(messages, tool_names)
     if specialist_call is not None:
