@@ -11,16 +11,26 @@ from pydantic_ai import Agent
 async def show_activity(_context, events) -> None:
     """Print only useful live events while Pydantic AI runs the agent."""
     async for event in events:
-        if not event.__class__.__name__.endswith("ToolCallEvent"):
+        event_name = event.__class__.__name__
+        if event_name == "CapabilityLoadDeltaEvent":
+            part = getattr(event, "part", None)
+            for capability_id in getattr(part, "loaded", []):
+                print(f"  [agent] using capability/skill: {capability_id}", flush=True)
             continue
-        if event.__class__.__name__ == "OutputToolCallEvent":
+        if not event_name.endswith("ToolCallEvent"):
+            continue
+        if event_name == "OutputToolCallEvent":
             continue
         part = getattr(event, "part", None)
         name = getattr(part, "tool_name", "unknown tool")
         kind = getattr(part, "tool_kind", None)
+        capability_id = getattr(part, "capability_id", None)
         if kind == "mcp_server" or str(name).startswith("mcp_server:"):
             label = "MCP"
-        elif name == "load_capability" or "skill" in str(name).lower() or "capability" in str(name).lower():
+        elif name == "load_capability" or kind == "capability-load":
+            label = "skill/capability"
+            name = capability_id or name
+        elif "skill" in str(name).lower() or "capability" in str(name).lower():
             label = "skill/capability"
         else:
             label = "tool"
